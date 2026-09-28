@@ -13,34 +13,39 @@ Thumbs.db
 .idea/
 .vscode/
 
-# PHP / Laravel
+# PHP / Laravel (backend/nckhcoreapi)
 /vendor/
 vendor/
+backend/nckhcoreapi/vendor/
+backend/nckhcoreapi/storage/*.key
+backend/nckhcoreapi/storage/framework/cache/*
+backend/nckhcoreapi/storage/framework/sessions/*
+backend/nckhcoreapi/storage/framework/views/*
 .phpunit.result.cache
 .phpunit.cache
-storage/*.key
 
-# Python
+# Python (backend/nckhtelegrambot)
 __pycache__/
 *.pyc
 venv/
 .venv/
 
-# Node / Web builds
+# Node / Web builds (webclient/* and packages/*)
 node_modules/
 /node_modules/
 build/
 dist/
+.npm/
 
-# Flutter / Dart
+# Flutter / Dart (mobile/*)
 .dart_tool/
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
-apps/mobile/build/
-apps/mobile/.dart_tool/
-apps/mobile/android/.gradle/
-apps/mobile/ios/Pods/
+mobile/**/build/
+mobile/**/.dart_tool/
+mobile/**/android/.gradle/
+mobile/**/ios/Pods/
 
 # Runtime data & uploads
 data/
@@ -49,5 +54,7 @@ backups/
 *.db
 *.sqlite
 *.sqlite3
-khminishop_backend_fastapi_backup/
-
+backend/nckhcoreapi/database/*.sqlite
+backend/nckhcoreapi/database/*.sqlite3
+backend/nckhcoreapi/public/uploads/
+backend/nckhcoreapi/public/backups/

@@ -1,19 +1,37 @@
 {
-  "name": "ministorekh-monorepo",
+  "name": "nexa-commerce-kh",
   "version": "1.0.0",
   "private": true,
-  "description": "MiniStore KH - Multi-tenant E-Commerce Monorepo",
+  "description": "Nexa Commerce KH (nexa-commerce-kh) — Multi-Tenant E-Commerce Monorepo Platform",
+  "workspaces": [
+    "webclient/*"
+  ],
   "scripts": {
-    "dev:api": "cd apps/api && php artisan serve --port=8000",
-    "dev:storefront": "cd apps/web/storefront && npm start",
-    "dev:admin": "cd apps/web/admin && npm start",
-    "dev:dashboard": "cd apps/web/dashboard && npm start",
-    "dev:reseller": "cd apps/web/reseller && npm start",
-    "dev:telegram": "cd apps/web/telegram-mini-app && npm start",
-    "dev:bot": "cd apps/workers/telegram-bot && python bot_worker.py",
-    "test:api": "cd apps/api && php artisan test"
+    "dev:api": "cd backend/nckhcoreapi && php artisan serve --port=8000",
+    "dev:bot": "cd backend/nckhtelegrambot && python bot_worker.py",
+    "dev:storefront": "cd webclient/nckhcustomerstorefront && npm start",
+    "dev:admin": "cd webclient/nckhadminportal && npm start",
+    "dev:merchant": "cd webclient/nckhmerchantportal && npm start",
+    "dev:dashboard": "cd webclient/nckhmerchantportal && npm start",
+    "dev:reseller": "cd webclient/nckhresellerportal && npm start",
+    "dev:telegram": "cd webclient/nckhtelegramminiapp && npm start",
+    "dev:pos": "cd mobile/nckhposapp && flutter run",
+    "dev:customerapp": "cd mobile/nckhcustomerapp && flutter run",
+    "test:api": "cd backend/nckhcoreapi && php artisan test",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   },
-  "keywords": ["laravel", "react", "flutter", "ecommerce", "khqr", "telegram-mini-app"],
-  "author": "Thy Muoyhak",
+  "keywords": [
+    "nexa-commerce-kh",
+    "laravel",
+    "react",
+    "flutter",
+    "ecommerce",
+    "khqr",
+    "pos",
+    "telegram-mini-app",
+    "multitenant"
+  ],
+  "author": "Nexa Commerce KH",
   "license": "MIT"
 }

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:frontend_mobile_app/models/product.dart';
-import 'package:frontend_mobile_app/providers/cart_provider.dart';
+import 'package:nckhcustomerapp/models/product.dart';
+import 'package:nckhcustomerapp/providers/cart_provider.dart';
 
 Product _product(int id, {double price = 10.0}) {
   return Product(

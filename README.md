@@ -1,8 +1,8 @@
-# MiniStore KH - Multi-Store E-Commerce Platform
+# Nexa Commerce KH (`nexa-commerce-kh`)
 
-A complete multi-tenant e-commerce platform where every shop gets its own storefront, dashboard, POS, ABA Pay (KHQR) checkout, PDF invoices, Telegram notifications, and reseller commissions.
+A complete multi-tenant e-commerce and POS platform where every shop gets its own storefront, merchant dashboard, POS, ABA Pay (KHQR) checkout, PDF invoices, Telegram notifications, and reseller commissions.
 
-Built with **Laravel 13 REST API** (PHP 8.3+) + **React Web Frontends** (Storefront, Admin, Shop Dashboard, Reseller, Telegram Mini App) + **Flutter** (Mobile App) + **Python Telegram Bot Worker**, structured as a modern clean monorepo under `apps/`.
+Built with **Laravel 13 REST API** (PHP 8.3+) + **React Web Frontends** (Storefront, Admin, Merchant Portal, Reseller, Telegram Mini App) + **Flutter** (Mobile POS & Customer App) + **Python Telegram Bot Worker**, organized as a clean pnpm monorepo.
 
 IMPORTANT: This repository is 100% code. All sensitive production secrets have been removed so you can safely clone it, study it, and build your own project. Everything runs locally with localhost defaults and demo seed accounts only.
 
@@ -19,7 +19,7 @@ IMPORTANT: This repository is 100% code. All sensitive production secrets have b
 7. Architecture
 8. Data Model
 9. Core Flows
-10. Mobile App (Flutter)
+10. Mobile Apps (Flutter)
 11. Project Structure
 12. Quick Start
 13. Environment Variables
@@ -29,8 +29,8 @@ IMPORTANT: This repository is 100% code. All sensitive production secrets have b
 17. Suggested Roadmap
 18. Contributing
 19. Disclaimer and Full License
-20. Telegram Mini App (apps/web/telegram-mini-app)
-21. Telegram Background Bot Worker (apps/workers/telegram-bot)
+20. Telegram Mini App (`webclient/nckhtelegramminiapp`)
+21. Telegram Background Bot Worker (`backend/nckhtelegrambot`)
 22. Local-Only Copies, Data Privacy and Security
 
 ---
@@ -39,14 +39,15 @@ IMPORTANT: This repository is 100% code. All sensitive production secrets have b
 
 | Application | Path | Port / Command |
 |---|---|---|
-| **Backend API (Laravel 13)** | `apps/api` | `make dev-api` or `php artisan serve --port=8000` |
-| **Customer Storefront** | `apps/web/storefront` | `make dev-storefront` (port 3000) |
-| **Platform Admin** | `apps/web/admin` | `make dev-admin` (port 3001) |
-| **Shop Owner Dashboard** | `apps/web/dashboard` | `make dev-dashboard` (port 3002) |
-| **Reseller Dashboard** | `apps/web/reseller` | `make dev-reseller` (port 3005) |
-| **Telegram Mini App** | `apps/web/telegram-mini-app` | `make dev-telegram` (port 3006) |
-| **Telegram Bot Worker** | `apps/workers/telegram-bot` | `make dev-bot` (python worker) |
-| **Mobile App (Flutter)** | `apps/mobile` | `cd apps/mobile && flutter run` |
+| **Backend Core API (Laravel 13)** | `backend/nckhcoreapi` | `make dev-api` or `php artisan serve --port=8000` |
+| **Telegram Bot Worker** | `backend/nckhtelegrambot` | `make dev-bot` (python worker) |
+| **Customer Storefront** | `webclient/nckhcustomerstorefront` | `make dev-storefront` (port 3000) |
+| **Platform Admin Portal** | `webclient/nckhadminportal` | `make dev-admin` (port 3001) |
+| **Merchant Portal (Dashboard & POS)** | `webclient/nckhmerchantportal` | `make dev-merchant` (port 3002) |
+| **Reseller Portal** | `webclient/nckhresellerportal` | `make dev-reseller` (port 3005) |
+| **Telegram Mini App** | `webclient/nckhtelegramminiapp` | `make dev-telegram` (port 3006) |
+| **Mobile POS App (Flutter)** | `mobile/nckhposapp` | `make dev-pos` or `cd mobile/nckhposapp && flutter run` |
+| **Mobile Customer App (Flutter)** | `mobile/nckhcustomerapp` | `make dev-customerapp` or `cd mobile/nckhcustomerapp && flutter run` |
 | **Open Demo Shop** | Browser | http://localhost:3000/demo |
 | **Create Shop** | Browser | http://localhost:3000/create-shop |
 
@@ -54,45 +55,28 @@ All accounts shown in this README (admin, demo, and so on) are LOCAL SEED accoun
 
 ---
 
-## 2. About and Developer
+## 2. About Project
 
-Developer: Thy Muoyhak (HakSimpleDev)
-
-- Telegram: https://t.me/thymuoyhak
-- GitHub: https://github.com/ThyMuoyhak
-- Purpose: learn, strengthen skills, and build a portfolio with a production-grade full-stack project.
+**Nexa Commerce KH** (`nexa-commerce-kh`) is a modern multi-tenant e-commerce, POS, and digital payment platform tailored for retail businesses, multi-store owners, and online storefronts in Cambodia.
 
 ---
 
 ## 3. License and Usage Policy
 
-Copyright (c) 2024 Thy Muoyhak (HakSimpleDev)
+Copyright (c) 2026 Nexa Commerce KH. Released under the MIT License.
 
-The project is published to help new developers learn, upskill, and build a portfolio by studying a real production-style architecture.
+Allowed:
+- Clone, fork, customize, and build your own applications.
+- Run locally for development, staging, or commercial deployment.
+- Modify, extend, and integrate with your own services.
 
-Allowed (free):
-- Clone, fork, study, and learn from the code.
-- Run locally for learning, experiments, and portfolio demos.
-- Modify, improve, and extend the project for personal use.
-- Use the code as a reference when building your own projects.
-- Contribute improvements via Pull Requests.
-
-Not allowed without permission:
-- Using this project (or a copy of it) to run a real business or commercial service.
-- Claiming it as your own product or reselling it.
-- Removing the author credit.
-
-If you want to use this project for a business or a commercial product, please contact the author first and follow the legal process.
-
-All credentials in this repository are DEMO-ONLY (for example ChangeMe123! and demo123). They are generated by the seed script on a fresh local database. They are never the credentials of real users, and no real user data is included anywhere in this repository.
+All credentials in this repository are DEMO-ONLY (for example ChangeMe123! and demo123). They are generated by the seed script on a fresh local database.
 
 ---
 ## 4. Security Policy
 
 ### Reporting Vulnerabilities
-If you discover a security vulnerability, please DO NOT open a public issue. Contact the author privately first:
-- Email: thymuoyhak.biu@gmail.com
-- Telegram: https://t.me/thymuoyhak
+If you discover a security vulnerability, please submit a security advisory or open a confidential issue.
 
 ### Security Best Practices for Production
 This project is designed for development and learning. Before deploying to production you must:
@@ -154,32 +138,33 @@ This project is designed for development and learning. Before deploying to produ
 | **Payments** | ABA Pay (KHQR) via PayWay gateway & local QR generator (`bacon/bacon-qr-code`) |
 | **PDF** | Barryvdh DomPDF (`barryvdh/laravel-dompdf`) bilingual invoice & receipt generation |
 | **Spreadsheets** | PhpSpreadsheet (`phpoffice/phpspreadsheet`) for Excel import/export |
-| **Telegram Mini App** | React WebApp storefront inside Telegram (`apps/web/telegram-mini-app`) |
-| **Bot Worker** | Python 24/7 background polling worker (`apps/workers/telegram-bot`) |
-| **DevOps** | Docker Compose (PostgreSQL, Redis, Mailpit), Makefile, Root package.json |
+| **Telegram Mini App** | React WebApp storefront inside Telegram (`webclient/nckhtelegramminiapp`) |
+| **Bot Worker** | Python 24/7 background polling worker (`backend/nckhtelegrambot`) |
+| **DevOps** | Docker Compose (PostgreSQL, Redis, Mailpit), Makefile, Root package.json, pnpm |
 
 ---
 
 ## 7. Architecture
 
-Five web apps (storefront, admin, shop dashboard, reseller, Telegram Mini App)
-plus a Flutter mobile app and a background bot worker talk to the Laravel 13 backend:
+Five web clients (storefront, admin, merchant portal, reseller, Telegram Mini App)
+plus two Flutter mobile apps (POS, Customer) and a background bot worker talk to the Laravel 13 Core API:
 
 ```
-apps/web/storefront          :3000   Storefront and self-serve shop signup
-apps/web/admin               :3001   Platform super admin panel
-apps/web/dashboard           :3002   Shop owner dashboard & POS
-apps/web/reseller            :3005   Reseller dashboard
-apps/web/telegram-mini-app   :3006   In-Telegram storefront (Mini App / WebApp)
-apps/mobile                          Flutter storefront (Android / iOS)
+webclient/nckhcustomerstorefront  :3000   Customer storefront & self-serve shop signup
+webclient/nckhadminportal         :3001   Platform super admin portal
+webclient/nckhmerchantportal      :3002   Shop merchant dashboard & POS
+webclient/nckhresellerportal      :3005   Reseller management portal
+webclient/nckhtelegramminiapp     :3006   In-Telegram storefront (Mini App / WebApp)
+mobile/nckhposapp                         Flutter mobile POS app
+mobile/nckhcustomerapp                    Flutter customer storefront app
 
-All frontends  -->  Laravel 13 API (apps/api - php artisan serve :8000)
-                     |--- Database (SQLite dev / PostgreSQL prod via Docker)
-                     |--- Uploads (images, QR codes, receipts)
-                     |--- ABA Pay / KHQR (PayWay gateway)
-                     |--- Telegram Bot (webhook & notifications)
+All frontends & apps  -->  Laravel 13 Core API (backend/nckhcoreapi - php artisan serve :8000)
+                             |--- Database (SQLite dev / PostgreSQL prod via Docker)
+                             |--- Uploads (images, QR codes, receipts)
+                             |--- ABA Pay / KHQR (PayWay gateway)
+                             |--- Telegram Bot (webhook & notifications)
 
-apps/workers/telegram-bot  -->  Laravel API
+backend/nckhtelegrambot  -->  Laravel API
    polls GET /api/bot-service/config for every connected shop bot,
    answers /start with shop info and an Open Shop button.
 ```
@@ -189,25 +174,27 @@ The backend is organized into standard Laravel Controllers, Form Requests, Servi
 ```mermaid
 graph TB
     subgraph WEB_AND_CLIENTS [Apps & Clients]
-        FU[apps/web/storefront<br/>Storefront & Signup<br/>:3000]
-        FA[apps/web/admin<br/>Platform Admin<br/>:3001]
-        FD[apps/web/dashboard<br/>Owner Dashboard & POS<br/>:3002]
-        FR[apps/web/reseller<br/>Reseller Dashboard<br/>:3005]
-        FG[apps/web/telegram-mini-app<br/>Telegram Mini App<br/>:3006]
-        FM[apps/mobile<br/>Flutter Storefront]
-        BW[apps/workers/telegram-bot<br/>Python Bot Worker]
+        FU["webclient/nckhcustomerstorefront<br/>Storefront & Signup<br/>:3000"]
+        FA["webclient/nckhadminportal<br/>Platform Admin<br/>:3001"]
+        FD["webclient/nckhmerchantportal<br/>Merchant Dashboard & POS<br/>:3002"]
+        FR["webclient/nckhresellerportal<br/>Reseller Portal<br/>:3005"]
+        FG["webclient/nckhtelegramminiapp<br/>Telegram Mini App<br/>:3006"]
+        FP["mobile/nckhposapp<br/>Flutter POS App"]
+        FM["mobile/nckhcustomerapp<br/>Flutter Customer App"]
+        BW["backend/nckhtelegrambot<br/>Python Bot Worker"]
     end
-    API[Laravel 13 REST API<br/>apps/api :8000<br/>Controllers & Services]
-    DB[(Database<br/>PostgreSQL / SQLite)]
-    REDIS[(Redis Cache & Queues)]
-    UP[(Uploads & Media)]
-    ABA[ABA Pay / KHQR<br/>PayWay Gateway]
-    TG[Telegram API]
+    API["Laravel 13 REST API<br/>backend/nckhcoreapi :8000<br/>Controllers & Services"]
+    DB[("Database<br/>PostgreSQL / SQLite")]
+    REDIS[("Redis Cache & Queues")]
+    UP[("Uploads & Media")]
+    ABA["ABA Pay / KHQR<br/>PayWay Gateway"]
+    TG["Telegram API"]
 
     FU --> API
     FA --> API
     FD --> API
     FR --> API
+    FP --> API
     FM --> API
     FG --> API
     BW --> API
@@ -267,7 +254,7 @@ id, shop_id, telegram_id, code_hash, expires_at (used for Telegram login codes).
 - An Order contains many OrderItems.
 - A Customer places many Orders.
 
-### Telegram Mini App data usage (Frontend_Telegram_Mini_APP)
+### Telegram Mini App data usage (`webclient/nckhtelegramminiapp`)
 The Mini App keeps no database of its own. It only reads the public REST API of
 the shop it opens (?shop=<username> or the Telegram start_param):
 - GET /api/shops/{username}/mini  -> shop identity, banner/logo, theme colors and
@@ -281,7 +268,7 @@ the shop it opens (?shop=<username> or the Telegram start_param):
 The shop that is shown is NEVER hard-coded: the Open Shop buttons built by the
 worker and the Dashboard menu button append ?shop=<username>.
 
-### Backend_Telegram_Mini_App (worker) data usage
+### Telegram Bot Worker (`backend/nckhtelegrambot`) data usage
 The worker keeps no database either. Every cycle it calls
 GET /api/bot-service/config with the X-Bot-Service-Key header. The API returns
 one object per shop that has telegram_settings.bot_token set, plus the platform
@@ -578,8 +565,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant U as User (phone)
-    participant M as Frontend_Mobile_APP (Flutter)
-    participant A as Backend API
+    participant M as Customer Mobile App (mobile/nckhcustomerapp)
+    participant A as Backend API (backend/nckhcoreapi)
     U->>M: Opens app, searches or browses shops
     M->>A: GET /api/shops/demo
     A-->>M: shop, theme colors, categories, products
@@ -596,59 +583,73 @@ sequenceDiagram
 ```
 
 ---
-## 10. Mobile App (Flutter)
+## 10. Mobile Apps (Flutter)
 
-Frontend_Mobile_APP is a Flutter storefront that mirrors the web storefront and uses the same FastAPI backend.
+The monorepo provides two Flutter mobile applications:
 
-What it can do:
+### 1. Customer Storefront App (`mobile/nckhcustomerapp`)
 - Open any shop by username and show the shop home with the owner theme colors.
 - Browse categories, product grids, and product detail (gallery, variations, quantity).
 - Cart plus ABA Pay (KHQR) checkout (create, open, verify polling).
 - Customer signup and signin with JWT, My Orders, and order tracking.
-- Create your own shop right from the phone with the FREE starter plan.
+- Self-serve create shop flow with starter plans.
 
-Run it:
-```
-cd Frontend_Mobile_APP
+Run customer app:
+```bash
+cd mobile/nckhcustomerapp
 flutter pub get
-flutter run --dart-define=API_URL=http://10.0.2.2:8000   (Android emulator)
+flutter run --dart-define=API_URL=http://10.0.2.2:8000
 ```
 
-More details are inside Frontend_Mobile_APP/README.md.
+### 2. Merchant Point-of-Sale App (`mobile/nckhposapp`)
+- Rapid cashier barcode/catalog selling interface.
+- Dual-currency calculations ($ USD and ៛ KHR at live exchange rates).
+- Instant Cash and Bakong KHQR checkout flows.
+
+Run POS app:
+```bash
+cd mobile/nckhposapp
+flutter pub get
+flutter run
+```
 
 ---
 
 ## 11. Project Structure
 
 ```
-ministorekh/
-|-- apps/
-|   |-- api/                       Laravel 13 REST API backend (:8000)
-|   |   |-- app/Http/Controllers/  Auth, Shops, Products, Categories, Orders, Payments...
-|   |   |-- app/Models/            Shop, User, Product, Category, Order, Customer...
-|   |   |-- app/Services/          AbaService, DomPdfReceiptService, BaconQrCodeService...
-|   |   |-- database/              Migrations & DatabaseSeeder
-|   |   |-- routes/api.php         All public & protected /api/* endpoints
-|   |   |-- tests/Feature/         Feature tests (PHPUnit)
-|   |   |-- .env.example
-|   |
-|   |-- web/                       React Web Applications
-|   |   |-- storefront/            Customer storefront & self-serve shop signup (:3000)
-|   |   |-- admin/                 Platform super admin panel (:3001)
-|   |   |-- dashboard/             Shop owner dashboard & POS (:3002)
-|   |   |-- reseller/              Reseller management portal (:3005)
-|   |   |-- telegram-mini-app/     In-Telegram storefront WebApp (:3006)
-|   |
-|   |-- mobile/                    Flutter mobile app (Android & iOS)
-|   |   |-- lib/                   Flutter screens, providers, models & services
-|   |
-|   |-- workers/
-|       |-- telegram-bot/          Python 24/7 Telegram bot polling worker
-|
-|-- docker-compose.yml             PostgreSQL, Redis, and Mailpit local containers
-|-- Makefile                       Root development shortcuts (make dev-api, etc.)
-|-- package.json                   Root npm scripts for monorepo development
-|-- README.md                      Project documentation
+nexa-commerce-kh/
+│
+├── backend/
+│   ├── nckhcoreapi/               Laravel 13 REST API core backend (:8000)
+│   │   ├── app/Http/Controllers/  Auth, Shops, Products, Categories, Orders, Payments...
+│   │   ├── app/Models/            Shop, User, Product, Category, Order, Customer...
+│   │   ├── app/Services/          AbaService, DomPdfReceiptService, BaconQrCodeService...
+│   │   ├── database/              Migrations & DatabaseSeeder
+│   │   ├── routes/api.php         All public & protected /api/* endpoints
+│   │   └── tests/Feature/         Feature tests (PHPUnit)
+│   └── nckhtelegrambot/           Python 24/7 Telegram bot background worker
+│
+├── webclient/
+│   ├── nckhadminportal/           Super Admin Management Portal (:3001)
+│   ├── nckhmerchantportal/        Merchant / Shop Owner Dashboard & POS (:3002)
+│   ├── nckhresellerportal/        Reseller & Affiliate Commission Portal (:3005)
+│   ├── nckhcustomerstorefront/    Customer Storefront & Self-serve Signup (:3000)
+│   └── nckhtelegramminiapp/       Telegram In-App WebApp Storefront (:3006)
+│
+├── mobile/
+│   ├── nckhposapp/                Flutter Point-of-Sale Mobile App for cashiers
+│   └── nckhcustomerapp/           Flutter Customer Storefront Mobile App
+│
+├── node_modules/                  Root pnpm monorepo dependencies (shared)
+├── pnpm-workspace.yaml            pnpm workspaces config (webclient/*)
+├── pnpm-lock.yaml                 pnpm dependency lockfile
+├── .npmrc                         pnpm hoist and peer dependency settings
+├── docker-compose.yml             PostgreSQL, Redis, and Mailpit local containers
+├── Makefile                       Root development shortcuts (make dev-api, etc.)
+├── package.json                   Root npm workspaces and development scripts
+├── .gitignore                     Repository ignore rules
+└── README.md                      Project documentation
 ```
 
 ---
@@ -658,18 +659,13 @@ ministorekh/
 ### Prerequisites
 - PHP 8.3+ & Composer
 - Node.js 18+ & npm
+- Flutter SDK 3.13+ (for mobile apps)
 - Docker & Docker Compose (optional for PostgreSQL & Redis)
 - Python 3.10+ (for background telegram bot worker)
 
-### Step 1 - Clone the repository
+### Step 1 - Start Backend API (Laravel 13)
 ```bash
-git clone https://github.com/ThyMuoyhak/MiniShopCambodia-FullStackWeb.git
-cd MiniShopCambodia-FullStackWeb
-```
-
-### Step 2 - Start Backend API (Laravel 13)
-```bash
-cd apps/api
+cd backend/nckhcoreapi
 
 # Copy environment & generate app key
 cp .env.example .env
@@ -688,50 +684,61 @@ php artisan serve --port=8000
 - Interactive health check: http://localhost:8000/api/health
 - API endpoints: http://localhost:8000/api/...
 
-### Step 3 - Start Web Applications
-You can start any web frontend using `npm start` or the root `Makefile`:
+### Step 2 - Start Web Portals
+You can start any web frontend using the root `Makefile` or npm scripts:
 
 ```bash
-# Storefront (Port 3000)
+# Customer Storefront (Port 3000)
 make dev-storefront
-# or: cd apps/web/storefront && npm start
+# or: cd webclient/nckhcustomerstorefront && npm start
 
-# Platform Admin (Port 3001)
+# Platform Admin Portal (Port 3001)
 make dev-admin
-# or: cd apps/web/admin && npm start
+# or: cd webclient/nckhadminportal && npm start
 
-# Shop Owner Dashboard (Port 3002)
-make dev-dashboard
-# or: cd apps/web/dashboard && npm start
+# Merchant Dashboard & POS (Port 3002)
+make dev-merchant
+# or: cd webclient/nckhmerchantportal && npm start
 
-# Reseller Dashboard (Port 3005)
+# Reseller Portal (Port 3005)
 make dev-reseller
-# or: cd apps/web/reseller && npm start
+# or: cd webclient/nckhresellerportal && npm start
 
 # Telegram Mini App (Port 3006)
 make dev-telegram
-# or: cd apps/web/telegram-mini-app && npm start
+# or: cd webclient/nckhtelegramminiapp && npm start
+```
+
+### Step 3 - Start Mobile Applications
+```bash
+# Flutter POS Mobile App
+make dev-pos
+# or: cd mobile/nckhposapp && flutter run
+
+# Flutter Customer Storefront App
+make dev-customerapp
+# or: cd mobile/nckhcustomerapp && flutter run
 ```
 
 ### Step 4 - Default Seed Accounts
 | Role | Username | Password | Login Portal |
 |---|---|---|---|
-| Platform Super Admin | `admin` | `admin123` | Platform Admin (:3001) |
-| Demo Shop Owner | `demo` | `demo123` | Shop Dashboard (:3002) |
+| Platform Super Admin | `admin` | `admin123` | Admin Portal (:3001) |
+| Demo Shop Owner | `demo` | `demo123` | Merchant Portal (:3002) |
 | Self-serve Shop Owner | your username | you choose | Created via http://localhost:3000/create-shop |
 
 ### Step 5 - Testing
 Run the automated PHPUnit test suite to verify all backend API endpoints:
 ```bash
 make test-api
-# or: cd apps/api && php artisan test
+# or: cd backend/nckhcoreapi && php artisan test
 ```
 
 ---
 
 ## 13. Environment Variables
 
-### Backend (.env file in Backend_API)
+### Backend (.env file in backend/nckhcoreapi)
 | Variable | Default | Purpose |
 |---|---|---|
 | DATABASE_URL | sqlite:///data/minishop.db | SQLite for development; postgresql://... for production |
@@ -971,15 +978,13 @@ Guidelines:
 
 ## 19. Disclaimer and Full License
 
-Disclaimer: this software is provided as is, without warranty of any kind. Use it at your own risk. The authors are not responsible for any damages or losses arising from its use.
+Disclaimer: this software is provided as is, without warranty of any kind. Use it at your own risk.
 
-License: MIT License, copyright (c) 2026 Thy Muoyhak (HakSimpleDev).
+License: MIT License, copyright (c) 2026 Nexa Commerce KH.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including the rights to use, copy, modify, merge, publish, distribute, sublicense, and sell copies, subject to the following conditions: the above copyright notice and this permission notice must be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Additional terms: commercial use requires explicit permission from the author, and attribution must be maintained in all copies or substantial portions.
 
 ---
 
@@ -987,7 +992,7 @@ Happy Building!
 
 ---
 
-## 20. Telegram Mini App (Frontend_Telegram_Mini_APP)
+## 20. Telegram Mini App (`webclient/nckhtelegramminiapp`)
 
 A React storefront that runs INSIDE Telegram as a Mini App / WebApp. Customers open
 it from a shop bot (Start, then the Open Shop button) and can browse and pay without
@@ -1010,22 +1015,22 @@ How the right shop is chosen (important):
   never falls back to the demo shop by accident.
 
 Run it locally (browser test works):
-```
-cd Frontend_Telegram_Mini_APP
+```bash
+cd webclient/nckhtelegramminiapp
 npm install
 echo REACT_APP_API_URL=http://localhost:8000 > .env.local
 npm start          # http://localhost:3006
 open http://localhost:3006/?shop=demo
 ```
 Inside Telegram the app auto-logins the customer with initData verified by the
-Backend_API shop bot.
+backend shop bot.
 
 ---
 
-## 21. Telegram Background Bot Worker (Backend_Telegram_Mini_App)
+## 21. Telegram Background Bot Worker (`backend/nckhtelegrambot`)
 
 A small Python service that polls Telegram `getUpdates` 24/7 for EVERY shop bot an
-owner connected in the Dashboard (Backend_API -> Telegram Mini App page). It is a
+owner connected in the Dashboard (`webclient/nckhmerchantportal` -> Telegram Mini App page). It is a
 companion to the Mini App - no webhooks are needed for the shop bots.
 
 What it does:
@@ -1036,32 +1041,32 @@ What it does:
 - Logs a heartbeat every 60s so you can confirm it is alive.
 
 How it gets the shop list:
-- It reads `GET /api/bot-service/config` from the Backend_API (protected by the
+- It reads `GET /api/bot-service/config` from the backend API (`backend/nckhcoreapi`, protected by the
   `X-Bot-Service-Key` header, which must match `BOT_SERVICE_KEY`).
 - The worker does NOT hard-code any bot token - tokens always come from the API.
 
 Why polling instead of webhooks:
 - Telegram forbids webhook + getUpdates on the same bot at the same time.
-- The worker polls shop bots, and the always-on Backend_API may serve the platform
+- The worker polls shop bots, and the always-on backend core API may serve the platform
   payment bot via webhook - the two never overlap because each bot is owned by
   exactly one mode.
 
 Run it locally (needs a real bot token from @BotFather for the full experience):
-```
-cd Backend_Telegram_Mini_App
-python -m venv venv && venv\Scripts\activate
+```bash
+cd backend/nckhtelegrambot
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# Backend_API .env (edit Backend_API/.env):
+# backend/nckhcoreapi .env:
 #   BOT_SERVICE_KEY=your-own-long-secret
 #   BOT_SERVICE_ENABLED=true
 
-# worker .env (create Backend_Telegram_Mini_App/.env):
+# worker .env (create backend/nckhtelegrambot/.env):
 #   MINI_BACKEND_BASE_URL=http://localhost:8000
 #   MINI_BOT_SERVICE_KEY=your-own-long-secret
 python bot_worker.py
 ```
-Connect a shop bot in the Dashboard (Frontend_Dashboard_User -> Telegram Mini App):
+Connect a shop bot in the Merchant Portal (`webclient/nckhmerchantportal` -> Telegram Mini App):
 1. paste the bot token and @username from @BotFather and press Check & Save Bot;
 2. save the Mini App URL and press Set bot menu button;
 3. press Start on the bot in Telegram - the worker answers with the shop About and
@@ -1091,7 +1096,7 @@ Rules for contributors (keep it that way):
 
 Security reminders for your OWN deployment (never in this repo):
 - Telegram tokens are passwords - rotate them in @BotFather if they are exposed.
-- Put `BOT_SERVICE_KEY` (Backend_API) and `MINI_BOT_SERVICE_KEY` (worker) in your
+- Put `BOT_SERVICE_KEY` (`backend/nckhcoreapi`) and `MINI_BOT_SERVICE_KEY` (worker) in your
   server environment with a long random value, and make both match.
 - When you deploy the Mini App, set `REACT_APP_API_URL` / `REACT_APP_MEDIA_URL` to
   your own backend and keep them out of Git.

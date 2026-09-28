@@ -3,25 +3,25 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: ministorekh_postgres
+    container_name: nckh_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-ministorekh}
-      POSTGRES_USER: ${DB_USERNAME:-ministore}
+      POSTGRES_DB: ${DB_DATABASE:-nckh_database}
+      POSTGRES_USER: ${DB_USERNAME:-nckh_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret123}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-ministore} -d ${DB_DATABASE:-ministorekh}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nckh_user} -d ${DB_DATABASE:-nckh_database}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: ministorekh_redis
+    container_name: nckh_redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -35,7 +35,7 @@ services:
 
   mailpit:
     image: axllent/mailpit:latest
-    container_name: ministorekh_mailpit
+    container_name: nckh_mailpit
     restart: unless-stopped
     ports:
       - "1025:1025" # SMTP

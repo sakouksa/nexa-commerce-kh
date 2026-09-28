@@ -9,11 +9,11 @@ import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MiniShopApp());
+  runApp(const NckhCustomerApp());
 }
 
-class MiniShopApp extends StatelessWidget {
-  const MiniShopApp({super.key});
+class NckhCustomerApp extends StatelessWidget {
+  const NckhCustomerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class MiniShopApp extends StatelessWidget {
           final shopProvider = context.read<ShopProvider>();
           final shop = shopProvider.shop;
           return MaterialApp(
-            title: 'MiniShop Cambodia',
+            title: 'Nexa Commerce KH',
             debugShowCheckedModeBanner: false,
             theme: ShopTheme.build(
               primaryHex: shop?.primaryColor ?? '#FF6B00',

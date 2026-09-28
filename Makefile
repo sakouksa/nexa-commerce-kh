@@ -1,39 +1,64 @@
-.PHONY: help install dev-api dev-storefront dev-admin dev-dashboard dev-reseller dev-telegram dev-bot test-api
+.PHONY: help install dev-api dev-bot dev-storefront dev-admin dev-merchant dev-dashboard dev-reseller dev-telegram dev-pos dev-customerapp test-api docker-up docker-down
 
 help:
 	@echo "=========================================================="
-	@echo " MiniStore KH Monorepo Development Commands"
+	@echo " Nexa Commerce KH (nexa-commerce-kh) Development Commands"
 	@echo "=========================================================="
-	@echo "  make dev-api         - Run Laravel 13 backend (port 8000)"
-	@echo "  make dev-storefront  - Run customer storefront (port 3000)"
-	@echo "  make dev-admin       - Run platform admin (port 3001)"
-	@echo "  make dev-dashboard   - Run shop owner dashboard (port 3002)"
-	@echo "  make dev-reseller    - Run reseller dashboard (port 3005)"
-	@echo "  make dev-telegram    - Run Telegram Mini App (port 3006)"
-	@echo "  make dev-bot         - Run Telegram bot worker"
-	@echo "  make test-api        - Run Laravel PHPUnit feature tests"
+	@echo "  Backend:"
+	@echo "    make dev-api          - Run Laravel 13 Core API (backend/nckhcoreapi :8000)"
+	@echo "    make dev-bot          - Run Telegram Bot Worker (backend/nckhtelegrambot)"
+	@echo "    make test-api         - Run Laravel test suite"
+	@echo ""
+	@echo "  Web Clients:"
+	@echo "    make dev-storefront   - Customer Storefront (webclient/nckhcustomerstorefront :3000)"
+	@echo "    make dev-admin        - Admin Portal (webclient/nckhadminportal :3001)"
+	@echo "    make dev-merchant     - Merchant Portal (webclient/nckhmerchantportal :3002)"
+	@echo "    make dev-reseller     - Reseller Portal (webclient/nckhresellerportal :3005)"
+	@echo "    make dev-telegram     - Telegram Mini App (webclient/nckhtelegramminiapp :3006)"
+	@echo ""
+	@echo "  Mobile:"
+	@echo "    make dev-pos          - Mobile POS App (mobile/nckhposapp)"
+	@echo "    make dev-customerapp  - Mobile Customer App (mobile/nckhcustomerapp)"
+	@echo ""
+	@echo "  Infrastructure:"
+	@echo "    make docker-up        - Start Postgres, Redis, Mailpit containers"
+	@echo "    make docker-down      - Stop docker containers"
 	@echo "=========================================================="
 
 dev-api:
-	cd apps/api && php artisan serve --port=8000
-
-dev-storefront:
-	cd apps/web/storefront && npm start
-
-dev-admin:
-	cd apps/web/admin && npm start
-
-dev-dashboard:
-	cd apps/web/dashboard && npm start
-
-dev-reseller:
-	cd apps/web/reseller && npm start
-
-dev-telegram:
-	cd apps/web/telegram-mini-app && npm start
+	cd backend/nckhcoreapi && php artisan serve --port=8000
 
 dev-bot:
-	cd apps/workers/telegram-bot && python bot_worker.py
+	cd backend/nckhtelegrambot && python bot_worker.py
 
 test-api:
-	cd apps/api && php artisan test
+	cd backend/nckhcoreapi && php artisan test
+
+dev-storefront:
+	cd webclient/nckhcustomerstorefront && npm start
+
+dev-admin:
+	cd webclient/nckhadminportal && npm start
+
+dev-merchant:
+	cd webclient/nckhmerchantportal && npm start
+
+dev-dashboard: dev-merchant
+
+dev-reseller:
+	cd webclient/nckhresellerportal && npm start
+
+dev-telegram:
+	cd webclient/nckhtelegramminiapp && npm start
+
+dev-pos:
+	cd mobile/nckhposapp && flutter run
+
+dev-customerapp:
+	cd mobile/nckhcustomerapp && flutter run
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
