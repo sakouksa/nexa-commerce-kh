@@ -1,29 +1,53 @@
 # --- Safety net: never commit runtime data, secrets or build artifacts ---
 
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# PHP / Laravel
+/vendor/
+vendor/
+.phpunit.result.cache
+.phpunit.cache
+storage/*.key
+
 # Python
 __pycache__/
 *.pyc
 venv/
 .venv/
 
-# Runtime data
+# Node / Web builds
+node_modules/
+/node_modules/
+build/
+dist/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/android/.gradle/
+apps/mobile/ios/Pods/
+
+# Runtime data & uploads
 data/
 uploads/
 backups/
 *.db
 *.sqlite
 *.sqlite3
+khminishop_backend_fastapi_backup/
 
-# Node / builds
-node_modules/
-build/
-
-# Env & secrets
-.env
-.env.*
-!.env.example
-
-# Logs & OS
-*.log
-.DS_Store
-Thumbs.db

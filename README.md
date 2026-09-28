@@ -1,11 +1,10 @@
-﻿# MiniShop - Multi-Store E-Commerce Platform
+# MiniStore KH - Multi-Store E-Commerce Platform
 
 A complete multi-tenant e-commerce platform where every shop gets its own storefront, dashboard, POS, ABA Pay (KHQR) checkout, PDF invoices, Telegram notifications, and reseller commissions.
 
-Built with FastAPI + React (5 web apps) + Flutter (mobile app), and a free 1-month Starter plan for new shops.
-Two LOCAL-ONLY Telegram add-ons are also included for learning: Frontend_Telegram_Mini_APP (a storefront that opens inside Telegram) and Backend_Telegram_Mini_App (a 24/7 background bot worker).
+Built with **Laravel 13 REST API** (PHP 8.3+) + **React Web Frontends** (Storefront, Admin, Shop Dashboard, Reseller, Telegram Mini App) + **Flutter** (Mobile App) + **Python Telegram Bot Worker**, structured as a modern clean monorepo under `apps/`.
 
-IMPORTANT: This repository is 100% code. All data, databases, uploads, backups and production secrets have been removed so you can safely clone it, study it, and build your own project. Everything runs locally with localhost defaults and demo seed accounts only.
+IMPORTANT: This repository is 100% code. All sensitive production secrets have been removed so you can safely clone it, study it, and build your own project. Everything runs locally with localhost defaults and demo seed accounts only.
 
 ---
 
@@ -30,20 +29,26 @@ IMPORTANT: This repository is 100% code. All data, databases, uploads, backups a
 17. Suggested Roadmap
 18. Contributing
 19. Disclaimer and Full License
-20. Telegram Mini App (Frontend_Telegram_Mini_APP)
-21. Telegram Background Bot Worker (Backend_Telegram_Mini_App)
+20. Telegram Mini App (apps/web/telegram-mini-app)
+21. Telegram Background Bot Worker (apps/workers/telegram-bot)
 22. Local-Only Copies, Data Privacy and Security
 
 ---
 
 ## 1. Run Locally
 
-| To try | How |
-|---|---|
-| Customer storefront | cd Frontend_User, then npm install, then npm start (port 3000) |
-| Open the demo shop | http://localhost:3000/demo |
-| Create your own shop | http://localhost:3000/create-shop (Starter plan is FREE for 1 month) |
-| Admin / Shop owner / Reseller dashboards | see the Quick Start section below |
+| Application | Path | Port / Command |
+|---|---|---|
+| **Backend API (Laravel 13)** | `apps/api` | `make dev-api` or `php artisan serve --port=8000` |
+| **Customer Storefront** | `apps/web/storefront` | `make dev-storefront` (port 3000) |
+| **Platform Admin** | `apps/web/admin` | `make dev-admin` (port 3001) |
+| **Shop Owner Dashboard** | `apps/web/dashboard` | `make dev-dashboard` (port 3002) |
+| **Reseller Dashboard** | `apps/web/reseller` | `make dev-reseller` (port 3005) |
+| **Telegram Mini App** | `apps/web/telegram-mini-app` | `make dev-telegram` (port 3006) |
+| **Telegram Bot Worker** | `apps/workers/telegram-bot` | `make dev-bot` (python worker) |
+| **Mobile App (Flutter)** | `apps/mobile` | `cd apps/mobile && flutter run` |
+| **Open Demo Shop** | Browser | http://localhost:3000/demo |
+| **Create Shop** | Browser | http://localhost:3000/create-shop |
 
 All accounts shown in this README (admin, demo, and so on) are LOCAL SEED accounts only. They are created automatically on a fresh local database and are never real users.
 
@@ -142,60 +147,62 @@ This project is designed for development and learning. Before deploying to produ
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.10+, FastAPI, SQLAlchemy, SQLite (dev) / PostgreSQL (prod), Uvicorn |
-| Frontends | React 18 (Create React App), Tailwind CSS, react-router-dom, recharts, chart.js |
-| Mobile | Flutter (Dart), Provider, http, shared_preferences, url_launcher |
-| Auth | bcrypt, PyJWT (JWT bearer tokens), role guards, failed-login lockout |
-| Payments | ABA Pay (KHQR) via the PayWay gateway (sandbox and live) |
-| PDF | reportlab plus optional headless Edge/Chromium for high-quality HTML invoices |
-| Deploy | Render / Railway / VPS (backend), Netlify / Vercel (frontends) |
-| Telegram Mini App | React (CRA) WebApp storefront that runs inside Telegram (Frontend_Telegram_Mini_APP) |
-| Bot worker | Python 24/7 polling worker for shop bots (Backend_Telegram_Mini_App) |
+| **Backend API** | PHP 8.3+, Laravel 13, Eloquent ORM, SQLite (dev) / PostgreSQL (prod), Laravel Sanctum + JWT |
+| **Frontends** | React 18, Tailwind CSS, react-router-dom, recharts, chart.js |
+| **Mobile** | Flutter (Dart), Provider, http, shared_preferences, url_launcher |
+| **Auth** | bcrypt, Firebase PHP-JWT (`firebase/php-jwt`), role middleware, failed-login lockout |
+| **Payments** | ABA Pay (KHQR) via PayWay gateway & local QR generator (`bacon/bacon-qr-code`) |
+| **PDF** | Barryvdh DomPDF (`barryvdh/laravel-dompdf`) bilingual invoice & receipt generation |
+| **Spreadsheets** | PhpSpreadsheet (`phpoffice/phpspreadsheet`) for Excel import/export |
+| **Telegram Mini App** | React WebApp storefront inside Telegram (`apps/web/telegram-mini-app`) |
+| **Bot Worker** | Python 24/7 background polling worker (`apps/workers/telegram-bot`) |
+| **DevOps** | Docker Compose (PostgreSQL, Redis, Mailpit), Makefile, Root package.json |
 
 ---
 
 ## 7. Architecture
 
 Five web apps (storefront, admin, shop dashboard, reseller, Telegram Mini App)
-plus a Flutter mobile app and a background bot worker all talk to one FastAPI backend:
+plus a Flutter mobile app and a background bot worker talk to the Laravel 13 backend:
 
 ```
-Frontend_User                :3000   Storefront and self-serve signup
-Frontend_Admin               :3001   Platform admin panel
-Frontend_Dashboard_User      :3002   Shop owner dashboard
-Frontend_Reseller            :3005   Reseller dashboard
-Frontend_Telegram_Mini_APP   :3006   In-Telegram storefront (Mini App / WebApp)
-Frontend_Mobile_APP                  Flutter storefront (Android / iOS)
+apps/web/storefront          :3000   Storefront and self-serve shop signup
+apps/web/admin               :3001   Platform super admin panel
+apps/web/dashboard           :3002   Shop owner dashboard & POS
+apps/web/reseller            :3005   Reseller dashboard
+apps/web/telegram-mini-app   :3006   In-Telegram storefront (Mini App / WebApp)
+apps/mobile                          Flutter storefront (Android / iOS)
 
-All of the above  -->  FastAPI Backend (uvicorn :8000)
-                         |--- Database (SQLite dev / PostgreSQL prod)
-                         |--- Uploads (images, QR codes, receipts)
-                         |--- ABA Pay / KHQR (PayWay gateway)
-                         |--- Telegram Bot (webhook for the platform payment bot)
+All frontends  -->  Laravel 13 API (apps/api - php artisan serve :8000)
+                     |--- Database (SQLite dev / PostgreSQL prod via Docker)
+                     |--- Uploads (images, QR codes, receipts)
+                     |--- ABA Pay / KHQR (PayWay gateway)
+                     |--- Telegram Bot (webhook & notifications)
 
-Backend_Telegram_Mini_App (worker) --> FastAPI Backend
+apps/workers/telegram-bot  -->  Laravel API
    polls GET /api/bot-service/config for every connected shop bot,
-   answers /start with the full shop About and an Open Shop button.
+   answers /start with shop info and an Open Shop button.
 ```
 
-The backend is organized into routers (endpoints by domain) and services (business logic: ABA, invoice/PDF, QR, stock, backup, Telegram).
+The backend is organized into standard Laravel Controllers, Form Requests, Services, and Middleware:
 
 ```mermaid
 graph TB
-    subgraph FRONTENDS
-        FU[Frontend_User<br/>storefront and signup<br/>:3000]
-        FA[Frontend_Admin<br/>platform admin<br/>:3001]
-        FD[Frontend_Dashboard_User<br/>shop owner dashboard<br/>:3002]
-        FR[Frontend_Reseller<br/>reseller dashboard<br/>:3005]
-        FG[Frontend_Telegram_Mini_APP<br/>in-Telegram storefront<br/>:3006]
-        FM[Frontend_Mobile_APP<br/>Flutter storefront]
-        BW[Backend_Telegram_Mini_App<br/>bot worker - getUpdates polling]
+    subgraph WEB_AND_CLIENTS [Apps & Clients]
+        FU[apps/web/storefront<br/>Storefront & Signup<br/>:3000]
+        FA[apps/web/admin<br/>Platform Admin<br/>:3001]
+        FD[apps/web/dashboard<br/>Owner Dashboard & POS<br/>:3002]
+        FR[apps/web/reseller<br/>Reseller Dashboard<br/>:3005]
+        FG[apps/web/telegram-mini-app<br/>Telegram Mini App<br/>:3006]
+        FM[apps/mobile<br/>Flutter Storefront]
+        BW[apps/workers/telegram-bot<br/>Python Bot Worker]
     end
-    API[FastAPI Backend<br/>uvicorn :8000<br/>routers and services]
-    DB[(Database<br/>SQLite dev / PostgreSQL prod)]
-    UP[(Uploads<br/>images, QR, receipts)]
-    ABA[ABA Pay / KHQR<br/>PayWay gateway]
-    TG[Telegram Bot]
+    API[Laravel 13 REST API<br/>apps/api :8000<br/>Controllers & Services]
+    DB[(Database<br/>PostgreSQL / SQLite)]
+    REDIS[(Redis Cache & Queues)]
+    UP[(Uploads & Media)]
+    ABA[ABA Pay / KHQR<br/>PayWay Gateway]
+    TG[Telegram API]
 
     FU --> API
     FA --> API
@@ -206,6 +213,7 @@ graph TB
     BW --> API
 
     API --> DB
+    API --> REDIS
     API --> UP
     API --> ABA
     API --> TG
@@ -613,157 +621,111 @@ More details are inside Frontend_Mobile_APP/README.md.
 ## 11. Project Structure
 
 ```
-MiniShopCambodia-FullStackWeb
-|-- Backend_API/                FastAPI backend, one API for all frontends
-|   |-- main.py                 App entry, auto-migrations, static mounts, docs
-|   |-- config.py               Configuration; every secret comes from env vars
-|   |-- database.py             SQLAlchemy engine and session
-|   |-- models.py               ORM models (Shop, User, Product, Order, ...)
-|   |-- schemas.py              Pydantic request/response schemas
-|   |-- security.py             bcrypt, JWT, role guards
-|   |-- seed.py                 Seeds default admin and demo shop on a fresh DB
-|   |-- .env.example            Environment-variable template
-|   |-- routers/                API endpoints by domain
-|   |   |-- auth.py             Login, Telegram login, user registration
-|   |   |-- shops.py            Public shop lookup, admin CRUD, owner check
-|   |   |-- products.py         Product CRUD plus public listing
-|   |   |-- categories.py       Category CRUD
-|   |   |-- orders.py           Order CRUD and POS orders
-|   |   |-- payments.py         ABA Pay (KHQR) create/verify/test
-|   |   |-- reports.py          Sales, product, customer, stock reports
-|   |   |-- plans.py            Plans, register, upgrade, confirm, resellers
-|   |   |-- backup.py           Backup and import (ZIP with images)
-|   |   |-- uploads.py          Image upload
-|   |   |-- telegram.py         Telegram bot and notifications
-|   |   |-- settings.py         Stats and platform settings
-|   |-- services/               Business logic
-|   |   |-- aba_service.py      ABA Pay / KHQR integration
-|   |   |-- invoice_service.py  PDF invoices (bilingual, theme color)
-|   |   |-- pdf_service.py      Receipt PDF generation
-|   |   |-- telegram_service.py Telegram helpers
-|   |   |-- backup_service.py   ZIP-with-images backup and restore
-|   |   |-- qr_service.py       QR image generation
-|   |   |-- stock_service.py    Stock adjustment logic
-|   |-- requirements.txt
+ministorekh/
+|-- apps/
+|   |-- api/                       Laravel 13 REST API backend (:8000)
+|   |   |-- app/Http/Controllers/  Auth, Shops, Products, Categories, Orders, Payments...
+|   |   |-- app/Models/            Shop, User, Product, Category, Order, Customer...
+|   |   |-- app/Services/          AbaService, DomPdfReceiptService, BaconQrCodeService...
+|   |   |-- database/              Migrations & DatabaseSeeder
+|   |   |-- routes/api.php         All public & protected /api/* endpoints
+|   |   |-- tests/Feature/         Feature tests (PHPUnit)
+|   |   |-- .env.example
+|   |
+|   |-- web/                       React Web Applications
+|   |   |-- storefront/            Customer storefront & self-serve shop signup (:3000)
+|   |   |-- admin/                 Platform super admin panel (:3001)
+|   |   |-- dashboard/             Shop owner dashboard & POS (:3002)
+|   |   |-- reseller/              Reseller management portal (:3005)
+|   |   |-- telegram-mini-app/     In-Telegram storefront WebApp (:3006)
+|   |
+|   |-- mobile/                    Flutter mobile app (Android & iOS)
+|   |   |-- lib/                   Flutter screens, providers, models & services
+|   |
+|   |-- workers/
+|       |-- telegram-bot/          Python 24/7 Telegram bot polling worker
 |
-|-- Frontend_User/              Storefront plus self-serve signup (port 3000)
-|   |-- src/App.js              Routes: /, /create-shop, /:username/*
-|   |-- src/contexts/           Shop, Cart, Customer, Owner, Theme
-|   |-- src/components/         Header, search bar, product cards/rows, slideshow
-|   |-- src/pages/              HomePage, CreateShop, ShopHome, Products,
-|   |                           ProductDetail, Checkout, OrderSuccess,
-|   |                           MyOrders, Profile, About
-|
-|-- Frontend_Admin/             Platform admin panel (port 3001)
-|   |-- src/pages/              Dashboard (6 charts), Shops, Users, Resellers,
-|   |                           ResellerDetail, Backup, ActivityLogs, Settings
-|
-|-- Frontend_Dashboard_User/    Shop owner dashboard (port 3002)
-|   |-- src/pages/              Dashboard, POS, Products, Categories, Stock,
-|   |                           Orders, Customers, Reports, Receipts,
-|   |                           PaymentSettings, TelegramSettings,
-|   |                           UpgradePlan, Backup, ShopSettings
-|
-|-- Frontend_Reseller/          Reseller dashboard (port 3005)
-|   |-- src/pages/              Dashboard (charts), Shops, Commissions, Promo,
-|   |                           Backup, Settings
-|
-|-- Frontend_Mobile_APP/        Flutter storefront (Android and iOS)
-    |-- lib/main.dart           App entry and theme wiring
-    |-- lib/models/             Shop, Product, Category, Customer, Order, Plan
-    |-- lib/services/           ApiClient plus shop/product/customer/order services
-    |-- lib/providers/          Shop, Cart, Customer, Theme state
-    |-- lib/screens/            Home, ShopHome, Products, ProductDetail, Cart,
-    |                           Checkout, OrderSuccess, MyOrders, Auth,
-    |                           Profile, CreateShop
-    |-- lib/widgets/            ProductCard, CategoryChip, ShopHeader, QtyStepper
-|
-|-- Frontend_Telegram_Mini_APP/  Telegram Mini App storefront (React, port 3006)
-|   |-- src/App.js             Shop load, blur loading, sticky categories, cart, checkout
-|   |-- src/Sheets.js          ProductSheet (full detail), CartSheet, Checkout, Success
-|   |-- src/telegram.js        Telegram WebApp helpers (init, initData, start_param)
-|   |-- src/api.js             API client (talks to Backend_API)
-|
-|-- Backend_Telegram_Mini_App/  24/7 background bot worker (Python)
-    |-- bot_worker.py          getUpdates polling, shop welcome, guided bot flows
-    |-- render.yaml            Render worker service template
-    |-- requirements.txt       httpx
+|-- docker-compose.yml             PostgreSQL, Redis, and Mailpit local containers
+|-- Makefile                       Root development shortcuts (make dev-api, etc.)
+|-- package.json                   Root npm scripts for monorepo development
+|-- README.md                      Project documentation
 ```
 
 ---
+
 ## 12. Quick Start
 
 ### Prerequisites
-- Python 3.10 or newer
-- Node.js 16 or newer
-- A terminal (Git Bash, PowerShell, or VS Code terminal)
-
-All secrets are loaded from environment variables. The defaults in the code are safe placeholders. Copy the template into a local .env file and never commit real credentials.
+- PHP 8.3+ & Composer
+- Node.js 18+ & npm
+- Docker & Docker Compose (optional for PostgreSQL & Redis)
+- Python 3.10+ (for background telegram bot worker)
 
 ### Step 1 - Clone the repository
-```
+```bash
 git clone https://github.com/ThyMuoyhak/MiniShopCambodia-FullStackWeb.git
 cd MiniShopCambodia-FullStackWeb
 ```
 
-### Step 2 - Start the backend API
-```
-cd Backend_API
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS / Linux:
-source venv/bin/activate
+### Step 2 - Start Backend API (Laravel 13)
+```bash
+cd apps/api
 
-pip install -r requirements.txt
-cp .env.example .env    # then edit the values (see the environment table below)
-uvicorn main:app --reload --port 8000
-```
-- Tables are created automatically and the default admin account is seeded on the first start.
-- Interactive API docs are available at http://localhost:8000/docs
+# Copy environment & generate app key
+cp .env.example .env
+php artisan key:generate
 
-### Step 3 - Start the storefront (Frontend_User, port 3000)
+# Run database migrations and seed demo data
+php artisan migrate --force
+php artisan db:seed
+
+# Generate demo image placeholders
+php generate_demo_images.php
+
+# Run development server (port 8000)
+php artisan serve --port=8000
 ```
-cd Frontend_User
-npm install
-npm start
+- Interactive health check: http://localhost:8000/api/health
+- API endpoints: http://localhost:8000/api/...
+
+### Step 3 - Start Web Applications
+You can start any web frontend using `npm start` or the root `Makefile`:
+
+```bash
+# Storefront (Port 3000)
+make dev-storefront
+# or: cd apps/web/storefront && npm start
+
+# Platform Admin (Port 3001)
+make dev-admin
+# or: cd apps/web/admin && npm start
+
+# Shop Owner Dashboard (Port 3002)
+make dev-dashboard
+# or: cd apps/web/dashboard && npm start
+
+# Reseller Dashboard (Port 3005)
+make dev-reseller
+# or: cd apps/web/reseller && npm start
+
+# Telegram Mini App (Port 3006)
+make dev-telegram
+# or: cd apps/web/telegram-mini-app && npm start
 ```
 
-### Step 4 - Start the platform admin (Frontend_Admin, port 3001)
-```
-cd Frontend_Admin
-npm install
-npm start        # login as admin
-```
-
-### Step 5 - Start the shop owner dashboard (Frontend_Dashboard_User, port 3002)
-```
-cd Frontend_Dashboard_User
-npm install
-npm start        # login as a shop owner (demo)
-```
-
-### Step 6 - Start the reseller dashboard (Frontend_Reseller, port 3005)
-```
-cd Frontend_Reseller
-npm install
-npm start        # login as a reseller
-```
-
-### Step 7 - Default accounts (seeded on a fresh database)
-| Role | Username | Password | Login at |
+### Step 4 - Default Seed Accounts
+| Role | Username | Password | Login Portal |
 |---|---|---|---|
-| Platform admin | admin | ChangeMe123! | Frontend_Admin :3001 |
-| Shop owner (demo) | demo | demo123 | Frontend_Dashboard_User :3002 |
-| Shop owner (self-serve) | your username | you choose | created via /create-shop |
+| Platform Super Admin | `admin` | `admin123` | Platform Admin (:3001) |
+| Demo Shop Owner | `demo` | `demo123` | Shop Dashboard (:3002) |
+| Self-serve Shop Owner | your username | you choose | Created via http://localhost:3000/create-shop |
 
-Change these passwords in production.
-
-### Step 8 - Try the full flow
-1. On the storefront (3000), create your own shop (Starter plan is free for 1 month). The shop opens instantly.
-2. Log in to the shop dashboard (3002), then add products, categories, logo, and theme.
-3. Back on the storefront, browse and check out with ABA Pay (sandbox mode).
-4. On the admin panel (3001), manage shops, resellers, and backups, and watch the live charts.
+### Step 5 - Testing
+Run the automated PHPUnit test suite to verify all backend API endpoints:
+```bash
+make test-api
+# or: cd apps/api && php artisan test
+```
 
 ---
 

@@ -1,0 +1,19 @@
+{
+  "name": "ministorekh-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MiniStore KH - Multi-tenant E-Commerce Monorepo",
+  "scripts": {
+    "dev:api": "cd apps/api && php artisan serve --port=8000",
+    "dev:storefront": "cd apps/web/storefront && npm start",
+    "dev:admin": "cd apps/web/admin && npm start",
+    "dev:dashboard": "cd apps/web/dashboard && npm start",
+    "dev:reseller": "cd apps/web/reseller && npm start",
+    "dev:telegram": "cd apps/web/telegram-mini-app && npm start",
+    "dev:bot": "cd apps/workers/telegram-bot && python bot_worker.py",
+    "test:api": "cd apps/api && php artisan test"
+  },
+  "keywords": ["laravel", "react", "flutter", "ecommerce", "khqr", "telegram-mini-app"],
+  "author": "Thy Muoyhak",
+  "license": "MIT"
+}
