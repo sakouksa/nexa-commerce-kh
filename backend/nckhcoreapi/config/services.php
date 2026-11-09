@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'jwt' => [
+        'secret' => env('JWT_SECRET', 'ministorekh-cambodia-secret-key-2026-secure'),
+        'algorithm' => env('JWT_ALGORITHM', 'HS256'),
+        'expire_minutes' => (int) env('JWT_EXPIRE_MINUTES', 10080),
+    ],
+
 ];

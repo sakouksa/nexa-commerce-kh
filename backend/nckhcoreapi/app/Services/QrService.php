@@ -38,7 +38,7 @@ class QrService
         }
 
         // Center logo overlay if logo exists
-        if (!empty($logoPath) && file_exists($logoPath)) {
+        if (! empty($logoPath) && file_exists($logoPath)) {
             try {
                 $logoInfo = getimagesize($logoPath);
                 if ($logoInfo) {
@@ -85,13 +85,13 @@ class QrService
     public static function generateQrImage(string $data, string $filename): string
     {
         $dir = public_path('uploads/qr');
-        if (!file_exists($dir)) {
+        if (! file_exists($dir)) {
             mkdir($dir, 0755, true);
         }
         $pngData = self::generateShopQr($data);
         $filepath = "{$dir}/{$filename}";
         file_put_contents($filepath, $pngData);
+
         return "/uploads/qr/{$filename}";
     }
 }
-

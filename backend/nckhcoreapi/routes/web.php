@@ -13,16 +13,18 @@ Route::get('/', function () {
 
 Route::get('/uploads/{path}', function ($path) {
     $full = public_path("uploads/{$path}");
-    if (!File::exists($full)) {
+    if (! File::exists($full)) {
         abort(404);
     }
+
     return response()->file($full);
 })->where('path', '.*');
 
 Route::get('/backups/{path}', function ($path) {
     $full = public_path("backups/{$path}");
-    if (!File::exists($full)) {
+    if (! File::exists($full)) {
         abort(404);
     }
+
     return response()->file($full);
 })->where('path', '.*');

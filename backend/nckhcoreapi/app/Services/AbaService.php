@@ -6,29 +6,30 @@ use App\Models\Order;
 use App\Models\Shop;
 use Exception;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class PaymentNotConfiguredException extends Exception {}
 
 class AbaService
 {
-    const KHQRCC_BASE = "https://khqr.cc/api";
+    const KHQRCC_BASE = 'https://khqr.cc/api';
 
     public static function abaHash(string $secretKey, string $transactionId, string $amount, string $successUrl, string $remark): string
     {
-        $raw = $secretKey . $transactionId . $amount . $successUrl . $remark;
+        $raw = $secretKey.$transactionId.$amount.$successUrl.$remark;
+
         return sha1($raw);
     }
 
     public static function verifyHash(string $secretKey, string $transactionId): string
     {
-        $raw = $secretKey . $transactionId;
+        $raw = $secretKey.$transactionId;
+
         return sha1($raw);
     }
 
     public static function generateTransactionId(string $orderNumber = ''): string
     {
-        return 'MS' . time() . random_int(1000, 9999);
+        return 'MS'.time().random_int(1000, 9999);
     }
 
     public static function getAbaConfig(Shop $shop): array
@@ -36,18 +37,20 @@ class AbaService
         $aba = $shop->aba_dict();
         $profileId = trim($aba['profile_id'] ?? '');
         $secretKey = trim($aba['secret_key'] ?? '');
+
         return [$profileId, $secretKey];
     }
 
     public static function isConfigured(Shop $shop): bool
     {
         [$profileId, $secretKey] = self::getAbaConfig($shop);
-        return !empty($profileId) && !empty($secretKey);
+
+        return ! empty($profileId) && ! empty($secretKey);
     }
 
     public static function requestDirectQr(string $profileId, string $secretKey, string $transactionId, string $amount, string $successUrl, string $remark): array
     {
-        $url = self::KHQRCC_BASE . "/{$profileId}/payment-gateway/v1/payments/qr-api-khqrcc";
+        $url = self::KHQRCC_BASE."/{$profileId}/payment-gateway/v1/payments/qr-api-khqrcc";
         $payload = [
             'transaction_id' => $transactionId,
             'amount' => $amount,
@@ -57,18 +60,20 @@ class AbaService
         ];
 
         $response = Http::asForm()->timeout(30)->post($url, $payload);
+
         return $response->json() ?? [];
     }
 
     public static function checkTransaction(string $profileId, string $secretKey, string $transactionId): array
     {
-        $url = self::KHQRCC_BASE . "/{$profileId}/payment-gateway/v1/payments/check-transv2-khqrcc";
+        $url = self::KHQRCC_BASE."/{$profileId}/payment-gateway/v1/payments/check-transv2-khqrcc";
         $payload = [
             'transaction_id' => $transactionId,
             'hash' => self::verifyHash($secretKey, $transactionId),
         ];
 
         $response = Http::asForm()->timeout(30)->post($url, $payload);
+
         return $response->json() ?? [];
     }
 
@@ -77,9 +82,9 @@ class AbaService
         [$profileId, $secretKey] = self::getAbaConfig($shop);
         if (empty($profileId) || empty($secretKey)) {
             throw new PaymentNotConfiguredException(
-                "ABA Pay is not configured for this shop yet. " .
-                "The shop owner must enter their ABA Pay Profile ID and Secret Key " .
-                "in the Shop Dashboard → Payment Settings before customers can pay online."
+                'ABA Pay is not configured for this shop yet. '.
+                'The shop owner must enter their ABA Pay Profile ID and Secret Key '.
+                'in the Shop Dashboard → Payment Settings before customers can pay online.'
             );
         }
 
@@ -92,11 +97,11 @@ class AbaService
         $errorUrl = $errorUrl ?: "{$baseUrl}/api/payments/aba/error?order_id={$order->id}";
         $hash = self::abaHash($secretKey, $transactionId, $amount, $successUrl, $remark);
 
-        $checkoutUrl = self::KHQRCC_BASE . "/payment/requestv2/{$profileId}?" .
-            "transaction_id={$transactionId}&amount={$amount}" .
-            "&success_url=" . rawurlencode($successUrl) .
-            "&remark=" . rawurlencode($remark) .
-            "&cancel_url=" . rawurlencode($cancelUrl) .
+        $checkoutUrl = self::KHQRCC_BASE."/payment/requestv2/{$profileId}?".
+            "transaction_id={$transactionId}&amount={$amount}".
+            '&success_url='.rawurlencode($successUrl).
+            '&remark='.rawurlencode($remark).
+            '&cancel_url='.rawurlencode($cancelUrl).
             "&hash={$hash}";
 
         $result = [
@@ -112,7 +117,7 @@ class AbaService
 
         try {
             $qr = self::requestDirectQr($profileId, $secretKey, $transactionId, $amount, $successUrl, $remark);
-            if (($qr['responseCode'] ?? null) === 0 && !empty($qr['data'])) {
+            if (($qr['responseCode'] ?? null) === 0 && ! empty($qr['data'])) {
                 $emv = $qr['data']['qr'] ?? '';
                 $qrUrl = $qr['data']['qr_url'] ?? '';
                 if ($emv) {
@@ -175,6 +180,7 @@ class AbaService
                     'detail' => $result,
                 ];
             }
+
             return [
                 'verified' => false,
                 'status' => $status,

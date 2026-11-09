@@ -1,0 +1,16 @@
+{
+  "title": "Activity Logs",
+  "subtitle": "កំណត់ហេតុសកម្មភាពសន្តិសុខប្រព័ន្ធ សកម្មភាព Shops និងប្រតិបត្តិការ Admin",
+  "filterUsername": "ចម្រាញ់តាម Username",
+  "filterShopId": "ចម្រាញ់តាម Shop ID",
+  "applyFilters": "អនុវត្តការចម្រាញ់",
+  "resetFilters": "កំណត់ឡើងវិញ (Reset)",
+  "exportCsv": "Export ជា CSV",
+  "user": "User",
+  "action": "សកម្មភាព (Action)",
+  "description": "ការពិពណ៌នា",
+  "ipAddress": "IP Address",
+  "shop": "Shop",
+  "timestamp": "កាលបរិច្ឆេទ / ពេលវេលា",
+  "noLogs": "មិនទាន់មានកំណត់ហេតុសកម្មភាពនៅឡើយទេ"
+}

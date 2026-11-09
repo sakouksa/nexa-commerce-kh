@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ShopHelper;
+use App\Http\Requests\Settings\UpdateSettingRequest;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -30,10 +31,10 @@ class SettingController extends Controller
             $settings = Setting::whereNull('shop_id')->get();
         }
 
-        return response()->json($settings->map(fn($s) => $s->to_dict())->toArray());
+        return response()->json($settings->map(fn ($s) => $s->to_dict())->toArray());
     }
 
-    public function update(Request $request)
+    public function update(UpdateSettingRequest $request)
     {
         $user = $request->user();
         $shopId = $request->input('shop_id');
@@ -51,7 +52,7 @@ class SettingController extends Controller
             ? json_encode($value, JSON_UNESCAPED_UNICODE)
             : (string) $value;
 
-        $setting = Setting::where('shop_id', $shopId ? (int)$shopId : null)
+        $setting = Setting::where('shop_id', $shopId ? (int) $shopId : null)
             ->where('key', $key)
             ->first();
 
@@ -60,7 +61,7 @@ class SettingController extends Controller
             $setting->save();
         } else {
             $setting = Setting::create([
-                'shop_id' => $shopId ? (int)$shopId : null,
+                'shop_id' => $shopId ? (int) $shopId : null,
                 'key' => $key,
                 'value' => $valueStr,
             ]);
@@ -95,8 +96,7 @@ class SettingController extends Controller
         $activeShops = Shop::where('status', 'active')->count();
         $products = Product::count();
         $orders = Order::count();
-        $paidOrders = Order::where('payment_status', 'paid')->get();
-        $revenue = round($paidOrders->sum('total'), 2);
+        $revenue = round((float) Order::where('payment_status', 'paid')->sum('total'), 2);
         $customers = Customer::count();
         $users = User::count();
         $resellers = User::where('role', 'reseller')->count();

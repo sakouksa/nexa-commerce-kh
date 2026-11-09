@@ -1,0 +1,56 @@
+{
+  "badge": "Data Safety & Disaster Recovery",
+  "title": "Backup & Restore System",
+  "subtitle": "Create full snapshots of your products, orders, categories, customers, and shop settings.",
+  "cards": {
+    "zipTitle": "Full System Backup",
+    "zipBadge": "Recommended",
+    "zipDesc": "Complete shop snapshot including all products, high-res images, categories, orders, and customer records in a portable ZIP file.",
+    "zipFormat": ".ZIP Archive",
+    "zipBtn": "Create ZIP Backup",
+    "zipCreating": "Creating Backup...",
+    "excelTitle": "Excel Spreadsheet Export",
+    "excelDesc": "Export clean spreadsheet tables of your store catalog and customer orders for accounting, inventory auditing, or manual review.",
+    "excelFormat": ".XLSX Spreadsheet",
+    "excelBtn": "Export to Excel",
+    "excelExporting": "Exporting...",
+    "importTitle": "Restore & Import Data",
+    "importDesc": "Restore your store data from a previously created ZIP or Excel backup file. Existing records are safely preserved.",
+    "importFormat": "Supports .ZIP, .XLSX, .JSON",
+    "importBtn": "Select File to Restore",
+    "importing": "Restoring Data..."
+  },
+  "history": {
+    "title": "Backup History",
+    "countBadge": "{{count}} files",
+    "subtitle": "Download previously created store snapshots anytime.",
+    "searchPlaceholder": "Search backup filename...",
+    "filterAll": "All",
+    "filterZip": "ZIP",
+    "filterExcel": "Excel",
+    "colIndex": "#",
+    "colFilename": "Filename",
+    "colFormat": "Format",
+    "colCreatedAt": "Created Date",
+    "colActions": "Actions",
+    "downloadBtn": "Download",
+    "downloading": "Downloading...",
+    "emptySearch": "No backup files match your search query.",
+    "emptyHistory": "No backup snapshots created yet.",
+    "emptyHistorySub": "Click \"Create ZIP Backup\" above to generate your first backup point.",
+    "showingRange": "Showing {{from}} to {{to}} of {{total}} entries"
+  },
+  "tips": {
+    "title": "Merchant Data Safety Best Practices",
+    "desc": "We recommend exporting a full ZIP backup before making major inventory edits and at the end of every business month to keep your records safe."
+  },
+  "toast": {
+    "zipSuccess": "Full ZIP backup created successfully: {{filename}}",
+    "excelSuccess": "Shop data exported to Excel successfully.",
+    "importSuccess": "Backup imported! {{count}} records restored.{{dup}}",
+    "backupFailed": "Backup failed. Please try again.",
+    "exportFailed": "Export failed. Please try again.",
+    "importFailed": "Import failed. Please verify file format.",
+    "downloadFailed": "Failed to download backup file."
+  }
+}

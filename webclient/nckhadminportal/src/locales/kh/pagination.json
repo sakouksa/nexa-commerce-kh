@@ -1,0 +1,13 @@
+{
+  "showing": "បង្ហាញ",
+  "to": "ដល់",
+  "of": "នៃ",
+  "results": "លទ្ធផល",
+  "perPage": "ក្នុងមួយទំព័រ:",
+  "prev": "មុន",
+  "next": "បន្ទាប់",
+  "page": "ទំព័រ",
+  "showingZero": "បង្ហាញ 0 កំណត់ត្រា",
+  "showingRecords": "បង្ហាញ {{start}}-{{end}} នៃ {{total}} កំណត់ត្រា",
+  "showPerPage": "បង្ហាញ"
+}

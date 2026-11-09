@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $adminPassword = env('DEFAULT_ADMIN_PASSWORD', 'admin123');
 
         $admin = User::where('username', $adminUsername)->first();
-        if (!$admin) {
+        if (! $admin) {
             User::create([
                 'username' => $adminUsername,
                 'email' => $adminEmail,
@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
 
         // 2) Demo shop
         $demoShop = Shop::where('username', 'demo')->first();
-        if (!$demoShop) {
+        if (! $demoShop) {
             $demoShop = Shop::create([
                 'username' => 'demo',
                 'shop_name' => 'Demo Fashion Store',
@@ -180,5 +180,10 @@ class DatabaseSeeder extends Seeder
                 'status' => 'active',
             ]);
         }
+
+        $this->call([
+            FoodShopSeeder::class,
+            Store50ProductsSeeder::class,
+        ]);
     }
 }

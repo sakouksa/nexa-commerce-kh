@@ -1,0 +1,16 @@
+{
+  "required": "តម្រូវឱ្យបំពេញ",
+  "optional": "ស្រេចចិត្ត",
+  "selectOption": "ជ្រើសរើសជម្រើសមួយ",
+  "username": "ឈ្មោះគណនី",
+  "password": "ពាក្យសម្ងាត់",
+  "email": "អ៊ីមែល",
+  "phone": "លេខទូរស័ព្ទ",
+  "name": "ឈ្មោះ",
+  "shopName": "ឈ្មោះហាង",
+  "role": "តួនាទី",
+  "status": "ស្ថានភាព",
+  "searchPlaceholder": "ស្វែងរកតាមពាក្យគន្លឹះ...",
+  "filterPlaceholder": "ចម្រាញ់...",
+  "enterValue": "បញ្ចូលតម្លៃ"
+}

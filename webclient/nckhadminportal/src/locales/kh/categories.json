@@ -1,0 +1,18 @@
+{
+  "title": "ប្រភេទទំនិញ",
+  "subtitle": "គ្រប់គ្រងប្រភេទទំនិញក្នុងហាង",
+  "searchPlaceholder": "ស្វែងរកតាមឈ្មោះប្រភេទទំនិញ...",
+  "addCategory": "បន្ថែមប្រភេទទំនិញ",
+  "editCategory": "កែសម្រួលប្រភេទទំនិញ",
+  "addCategorySubtitle": "បញ្ចូលព័ត៌មានលម្អិតសម្រាប់ប្រភេទទំនិញថ្មីរបស់អ្នក",
+  "editCategorySubtitle": "កែប្រែព័ត៌មានលម្អិតនៃប្រភេទទំនិញនេះ",
+  "name": "ឈ្មោះប្រភេទទំនិញ",
+  "namePlaceholder": "ឧ. អាហារសម្រន់, ភេសជ្ជៈ, បង្អែម...",
+  "slugPlaceholder": "drinks, snacks, desserts...",
+  "description": "ការពិពណ៌នា",
+  "descPlaceholder": "ពិពណ៌នាសង្ខេបអំពីប្រភេទទំនិញនេះ...",
+  "activeStatus": "ស្ថានភាពប្រភេទសកម្ម",
+  "activeDesc": "បង្ហាញប្រភេទទំនិញនេះក្នុងហាង និង POS",
+  "nameRequired": "សូមបញ្ចូលឈ្មោះប្រភេទទំនិញ"
+}
+

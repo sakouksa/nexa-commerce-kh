@@ -7,7 +7,7 @@ void main() {
 }
 
 class NckhPosApp extends StatelessWidget {
-  const NckhPosApp({Key? key}) : super(key: key);
+  const NckhPosApp({super.key});
 
   @override
   Widget build(BuildContext context) {

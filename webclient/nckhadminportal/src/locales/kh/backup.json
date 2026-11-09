@@ -1,0 +1,20 @@
+{
+  "title": "Database & System Backup",
+  "subtitle": "បង្កើត Backup Snapshot ពេញលេញ, Export ជា Excel, និងគ្រប់គ្រងចំណុច Restore",
+  "createSnapshot": "បង្កើត Backup Snapshot",
+  "exportExcel": "Export Excel Backup",
+  "downloadZip": "Download Full ZIP (រួមទាំង Images)",
+  "restoreBackup": "Restore Backup",
+  "uploadPrompt": "ចុចដើម្បីជ្រើសរើសឯកសារ Backup (.zip, .xlsx, .sqlite, .sql)",
+  "backupHistory": "ប្រវត្តិ Backup",
+  "filename": "ឈ្មោះ File",
+  "size": "ទំហំ (Size)",
+  "type": "ប្រភេទ (Type)",
+  "createdAt": "កាលបរិច្ឆេទបង្កើត",
+  "download": "Download",
+  "restore": "Restore",
+  "restoreConfirm": "ការព្រមាន៖ ការ Restore Backup នេះនឹងជំនួសទិន្នន័យប្រព័ន្ធបច្ចុប្បន្ន។ តើអ្នកចង់បន្តទេ?",
+  "creating": "កំពុងបង្កើត Backup...",
+  "exporting": "កំពុង Export...",
+  "restoring": "កំពុង Restore ប្រព័ន្ធ..."
+}

@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ShopHelper;
+use App\Http\Requests\Products\StoreProductRequest;
+use App\Http\Requests\Products\UpdateProductRequest;
+use App\Http\Resources\ProductResource;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\Request;
@@ -13,11 +17,11 @@ class ProductController extends Controller
     public function listPublic(Request $request)
     {
         $shopId = $request->input('shop_id');
-        if (!$shopId) {
+        if (! $shopId) {
             throw new HttpException(400, 'shop_id is required');
         }
 
-        $query = Product::where('shop_id', $shopId)->where('status', 'active');
+        $query = Product::with('category')->where('shop_id', $shopId)->where('status', 'active');
 
         if ($request->has('category_id') && $request->input('category_id')) {
             $query->where('category_id', $request->input('category_id'));
@@ -36,22 +40,23 @@ class ProductController extends Controller
 
         $sort = $request->input('sort', 'newest');
         if ($sort === 'price_asc') {
-            $products = $products->sortBy(fn($p) => $p->sale_price !== null ? $p->sale_price : $p->price)->values();
+            $products = $products->sortBy(fn ($p) => $p->sale_price !== null ? $p->sale_price : $p->price)->values();
         } elseif ($sort === 'price_desc') {
-            $products = $products->sortByDesc(fn($p) => $p->sale_price !== null ? $p->sale_price : $p->price)->values();
+            $products = $products->sortByDesc(fn ($p) => $p->sale_price !== null ? $p->sale_price : $p->price)->values();
         } else {
             $products = $products->sortByDesc('created_at')->values();
         }
 
-        return response()->json($products->map(fn($p) => $p->to_dict())->toArray());
+        return response()->json($products->map(fn ($p) => $p->to_dict())->toArray());
     }
 
     public function getPublic(int $productId)
     {
-        $product = Product::where('id', $productId)->where('status', 'active')->first();
-        if (!$product) {
+        $product = Product::with('category')->where('id', $productId)->where('status', 'active')->first();
+        if (! $product) {
             throw new HttpException(404, 'Product not found');
         }
+
         return response()->json($product->to_dict());
     }
 
@@ -59,29 +64,31 @@ class ProductController extends Controller
     {
         $user = $request->user();
         $shopId = (int) $request->input('shop_id');
-        if (!$shopId) {
+        if (! $shopId) {
             throw new HttpException(400, 'shop_id is required');
         }
 
         ShopHelper::requireShopAccess($shopId, $user);
 
-        $products = Product::where('shop_id', $shopId)->orderBy('id', 'desc')->get();
-        return response()->json($products->map(fn($p) => $p->to_dict())->toArray());
+        $products = Product::with('category')->where('shop_id', $shopId)->orderBy('id', 'desc')->get();
+
+        return response()->json($products->map(fn ($p) => $p->to_dict())->toArray());
     }
 
     public function show(Request $request, int $productId)
     {
         $user = $request->user();
-        $product = Product::find($productId);
-        if (!$product) {
+        $product = Product::with('category')->find($productId);
+        if (! $product) {
             throw new HttpException(404, 'Product not found');
         }
 
         ShopHelper::requireShopAccess($product->shop_id, $user);
+
         return response()->json($product->to_dict());
     }
 
-    public function store(\App\Http\Requests\Products\StoreProductRequest $request)
+    public function store(StoreProductRequest $request)
     {
         $user = $request->user();
         $shopId = (int) $request->input('shop_id');
@@ -97,9 +104,17 @@ class ProductController extends Controller
             }
         }
 
+        $categoryId = $request->input('category_id');
+        if ($categoryId) {
+            $cat = Category::where('id', $categoryId)->where('shop_id', $shopId)->first();
+            if (! $cat) {
+                throw new HttpException(400, 'Invalid category for this shop');
+            }
+        }
+
         $product = Product::create([
             'shop_id' => $shopId,
-            'category_id' => $request->input('category_id'),
+            'category_id' => $categoryId,
             'name' => $request->input('name'),
             'description' => $request->input('description', ''),
             'price' => (float) $request->input('price', 0),
@@ -115,20 +130,31 @@ class ProductController extends Controller
 
         ShopHelper::logActivity('create_product', "{$user->username} created product '{$product->name}'", $shopId, $user);
 
-        return response()->json((new \App\Http\Resources\ProductResource($product))->resolve());
+        return response()->json((new ProductResource($product))->resolve());
     }
 
-    public function update(\App\Http\Requests\Products\UpdateProductRequest $request, int $productId)
+    public function update(UpdateProductRequest $request, int $productId)
     {
         $user = $request->user();
         $product = Product::find($productId);
-        if (!$product) {
+        if (! $product) {
             throw new HttpException(404, 'Product not found');
         }
 
         ShopHelper::requireShopAccess($product->shop_id, $user);
 
-        $fields = ['category_id', 'name', 'description', 'price', 'sale_price', 'quantity', 'featured', 'status'];
+        if ($request->has('category_id')) {
+            $categoryId = $request->input('category_id');
+            if ($categoryId) {
+                $cat = Category::where('id', $categoryId)->where('shop_id', $product->shop_id)->first();
+                if (! $cat) {
+                    throw new HttpException(400, 'Invalid category for this shop');
+                }
+            }
+            $product->category_id = $categoryId;
+        }
+
+        $fields = ['name', 'description', 'price', 'sale_price', 'quantity', 'featured', 'status'];
         foreach ($fields as $f) {
             if ($request->has($f)) {
                 $product->{$f} = $request->input($f);
@@ -158,7 +184,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
         $product = Product::find($productId);
-        if (!$product) {
+        if (! $product) {
             throw new HttpException(404, 'Product not found');
         }
 
@@ -183,7 +209,7 @@ class ProductController extends Controller
     {
         $user = $request->user();
         $product = Product::find($productId);
-        if (!$product) {
+        if (! $product) {
             throw new HttpException(404, 'Product not found');
         }
 

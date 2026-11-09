@@ -1,0 +1,21 @@
+{
+  "title": "User Management",
+  "subtitle": "Platform administrators, shop owners, and resellers",
+  "createUser": "Add User",
+  "editUser": "Edit User",
+  "user": "User",
+  "email": "Email",
+  "role": "Role",
+  "roles": {
+    "superadmin": "Super Admin",
+    "admin": "Admin",
+    "shop_owner": "Shop Owner",
+    "reseller": "Reseller"
+  },
+  "assignedShop": "Assigned Shop",
+  "noShop": "No shop assigned",
+  "resetPassword": "Reset Password",
+  "resetPasswordPrompt": "Enter a new password for {{username}}:",
+  "deleteUserConfirm": "Delete user \"{{username}}\"?",
+  "passwordHelp": "Leave blank to keep existing password"
+}

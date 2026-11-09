@@ -3,11 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\OrderCreated;
-use App\Services\PdfReceiptService;
-use App\Services\StockService;
 use App\Services\TelegramService;
-use App\Helpers\ShopHelper;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendTelegramOrderNotification
 {
@@ -15,7 +11,7 @@ class SendTelegramOrderNotification
     {
         $order = $event->order;
         $shop = $order->shop;
-        if (!$shop) {
+        if (! $shop) {
             return;
         }
 

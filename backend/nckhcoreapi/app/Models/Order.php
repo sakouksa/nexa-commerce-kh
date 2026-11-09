@@ -95,7 +95,7 @@ class Order extends Model
         ];
 
         if ($include_items) {
-            $d['items'] = $this->items->map(fn($item) => $item->to_dict())->toArray();
+            $d['items'] = $this->items->map(fn ($item) => $item->to_dict())->toArray();
         }
 
         return $d;

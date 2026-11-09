@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ShopHelper;
-use App\Models\Category;
-use App\Models\Order;
-use App\Models\Product;
+use App\Http\Requests\Shops\StoreShopRequest;
+use App\Http\Requests\Shops\UpdateShopRequest;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\AbaService;
@@ -13,6 +12,7 @@ use App\Services\QrService;
 use App\Services\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -21,7 +21,7 @@ class ShopController extends Controller
     public function getByUsername(string $username)
     {
         $shop = Shop::where('username', $username)->first();
-        if (!$shop || $shop->status !== 'active' || $shop->is_expired()) {
+        if (! $shop || $shop->status !== 'active' || $shop->is_expired()) {
             throw new HttpException(404, 'Shop not found or unavailable');
         }
 
@@ -30,7 +30,7 @@ class ShopController extends Controller
 
         $tg = $shop->telegram_dict();
         $botToken = trim($tg['bot_token'] ?? '');
-        $d['telegram_login_enabled'] = !empty($botToken);
+        $d['telegram_login_enabled'] = ! empty($botToken);
         $d['telegram_bot_username'] = $botToken ? TelegramService::getBotUsername($botToken) : null;
 
         return response()->json($d);
@@ -39,7 +39,7 @@ class ShopController extends Controller
     public function getShopMini(string $username)
     {
         $shop = Shop::where('username', $username)->first();
-        if (!$shop || $shop->status !== 'active' || $shop->is_expired()) {
+        if (! $shop || $shop->status !== 'active' || $shop->is_expired()) {
             throw new HttpException(404, 'Shop not found or unavailable');
         }
 
@@ -51,7 +51,7 @@ class ShopController extends Controller
         $d['payment_configured'] = AbaService::isConfigured($shop);
 
         $botToken = trim($tg['bot_token'] ?? '');
-        $d['telegram_login_enabled'] = !empty($botToken);
+        $d['telegram_login_enabled'] = ! empty($botToken);
         $d['telegram_bot_username'] = $botToken ? TelegramService::getBotUsername($botToken) : null;
 
         return response()->json($d);
@@ -60,24 +60,26 @@ class ShopController extends Controller
     public function getByIdPublic(int $shopId)
     {
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active' || $shop->is_expired()) {
+        if (! $shop || $shop->status !== 'active' || $shop->is_expired()) {
             throw new HttpException(404, 'Shop not found or unavailable');
         }
+
         return response()->json($shop->to_dict(false));
     }
 
     public function index(Request $request)
     {
-        $shops = Shop::orderBy('id')->get();
+        $shops = Shop::withCount(['products', 'categories', 'orders', 'users'])->orderBy('id')->get();
         $out = [];
         foreach ($shops as $s) {
             $d = $s->to_dict(true);
-            $d['product_count'] = Product::where('shop_id', $s->id)->count();
-            $d['category_count'] = Category::where('shop_id', $s->id)->count();
-            $d['order_count'] = Order::where('shop_id', $s->id)->count();
-            $d['user_count'] = User::where('shop_id', $s->id)->count();
+            $d['product_count'] = (int) $s->products_count;
+            $d['category_count'] = (int) $s->categories_count;
+            $d['order_count'] = (int) $s->orders_count;
+            $d['user_count'] = (int) $s->users_count;
             $out[] = $d;
         }
+
         return response()->json($out);
     }
 
@@ -86,16 +88,16 @@ class ShopController extends Controller
         $user = $request->user();
         ShopHelper::requireShopAccess($shopId, $user);
 
-        $shop = Shop::find($shopId);
-        if (!$shop) {
+        $shop = Shop::withCount(['products', 'categories', 'orders', 'users'])->find($shopId);
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $d = $shop->to_dict(true);
-        $d['product_count'] = Product::where('shop_id', $shop->id)->count();
-        $d['category_count'] = Category::where('shop_id', $shop->id)->count();
-        $d['order_count'] = Order::where('shop_id', $shop->id)->count();
-        $d['user_count'] = User::where('shop_id', $shop->id)->count();
+        $d['product_count'] = (int) $shop->products_count;
+        $d['category_count'] = (int) $shop->categories_count;
+        $d['order_count'] = (int) $shop->orders_count;
+        $d['user_count'] = (int) $shop->users_count;
 
         return response()->json($d);
     }
@@ -104,6 +106,7 @@ class ShopController extends Controller
     {
         $user = $request->user();
         $isOwner = ((int) $user->shop_id === (int) $shopId && in_array($user->role, ['shop_owner', 'staff'])) || ($user->role === 'admin');
+
         return response()->json([
             'shop_id' => $shopId,
             'is_owner' => $isOwner,
@@ -111,7 +114,7 @@ class ShopController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreShopRequest $request)
     {
         $admin = $request->user();
         $username = trim($request->input('username', ''));
@@ -120,41 +123,49 @@ class ShopController extends Controller
         $password = $request->input('password', '');
         $currency = $request->input('currency', 'USD');
 
-        if (!$username || !$password) {
+        if (! $username || ! $password) {
             throw new HttpException(400, 'Username and password are required');
         }
-        if (Shop::where('username', $username)->exists()) {
-            throw new HttpException(400, 'Shop username already exists');
+        if (Shop::where('username', $username)->exists() || User::where('username', $username)->exists()) {
+            throw new HttpException(400, 'Username already exists');
         }
 
-        $shop = Shop::create([
-            'username' => $username,
-            'shop_name' => $shopName ?: $username,
-            'currency' => $currency,
-        ]);
+        $shop = null;
+        DB::transaction(function () use (&$shop, $username, $shopName, $currency, $email, $password) {
+            $shop = Shop::create([
+                'username' => $username,
+                'shop_name' => $shopName ?: $username,
+                'currency' => $currency,
+            ]);
 
-        User::create([
-            'username' => $username,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'role' => 'shop_owner',
-            'shop_id' => $shop->id,
-        ]);
+            User::create([
+                'username' => $username,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'role' => 'shop_owner',
+                'shop_id' => $shop->id,
+            ]);
+        });
 
         ShopHelper::logActivity('create_shop', "Admin created shop {$shop->username}", $shop->id, $admin);
 
         return response()->json($shop->to_dict(true));
     }
 
-    public function update(Request $request, int $shopId)
+    public function update(UpdateShopRequest $request, int $shopId)
     {
         $user = $request->user();
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
+
+        $originalData = $shop->only([
+            'shop_name', 'username', 'currency', 'status', 'contact',
+            'aba_settings', 'telegram_settings',
+        ]);
 
         $fields = [
             'shop_name', 'username', 'logo', 'banner', 'bio', 'description',
@@ -184,7 +195,12 @@ class ShopController extends Controller
         }
 
         $shop->save();
-        ShopHelper::logActivity('update_shop', "{$user->username} updated shop {$shop->username}", $shop->id, $user);
+        $changes = $shop->getChanges();
+        $diff = [
+            'before' => array_intersect_key($originalData, $changes),
+            'after' => $changes,
+        ];
+        ShopHelper::logActivity('update_shop', "{$user->username} updated shop {$shop->username}", $shop->id, $user, 'success', $diff);
 
         return response()->json($shop->to_dict(true));
     }
@@ -193,26 +209,46 @@ class ShopController extends Controller
     {
         $admin = $request->user();
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
+        $oldStatus = $shop->status;
         $shop->status = $request->input('status', $shop->status);
         $shop->save();
 
-        ShopHelper::logActivity('shop_status', "Admin set shop {$shop->username} status={$shop->status}", $shop->id, $admin);
+        ShopHelper::logActivity(
+            'shop_status',
+            "Admin set shop {$shop->username} status={$shop->status}",
+            $shop->id,
+            $admin,
+            'success',
+            ['before' => ['status' => $oldStatus], 'after' => ['status' => $shop->status]]
+        );
 
         return response()->json($shop->to_dict(true));
     }
 
     public function destroy(Request $request, int $shopId)
     {
+        $admin = $request->user();
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
+        $shopInfo = ['id' => $shop->id, 'username' => $shop->username, 'name' => $shop->shop_name];
         $shop->delete();
+
+        ShopHelper::logActivity(
+            'delete_shop',
+            "Admin {$admin->username} deleted shop {$shopInfo['username']} (#{$shopInfo['id']})",
+            $shopInfo['id'],
+            $admin,
+            'success',
+            ['deleted_shop' => $shopInfo]
+        );
+
         return response()->json(['ok' => true]);
     }
 
@@ -220,7 +256,7 @@ class ShopController extends Controller
     {
         $admin = $request->user();
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -228,6 +264,8 @@ class ShopController extends Controller
         if ($days < 0) {
             throw new HttpException(400, 'Days cannot be negative');
         }
+
+        $oldExpiry = $shop->expires_at ? $shop->expires_at->toIso8601String() : 'none';
 
         if ($days === 0) {
             $shop->expires_at = null;
@@ -237,7 +275,15 @@ class ShopController extends Controller
         }
 
         $shop->save();
-        ShopHelper::logActivity('set_shop_expiry', "Admin set shop {$shop->username} expiry to " . ($shop->expires_at ? $shop->expires_at->toIso8601String() : 'none') . " ({$days} days)", $shop->id, $admin);
+        $newExpiry = $shop->expires_at ? $shop->expires_at->toIso8601String() : 'none';
+        ShopHelper::logActivity(
+            'set_shop_expiry',
+            "Admin set shop {$shop->username} expiry to {$newExpiry} ({$days} days)",
+            $shop->id,
+            $admin,
+            'success',
+            ['before' => ['expires_at' => $oldExpiry], 'after' => ['expires_at' => $newExpiry, 'days' => $days]]
+        );
 
         return response()->json($shop->to_dict(true));
     }
@@ -246,7 +292,7 @@ class ShopController extends Controller
     {
         $admin = $request->user();
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -264,7 +310,7 @@ class ShopController extends Controller
         }
 
         $shop->save();
-        ShopHelper::logActivity('set_shop_limits', "Admin set shop {$shop->username} limits (products=" . ($shop->max_products ?: 'unlimited') . ", categories=" . ($shop->max_categories ?: 'unlimited') . ")", $shop->id, $admin);
+        ShopHelper::logActivity('set_shop_limits', "Admin set shop {$shop->username} limits (products=".($shop->max_products ?: 'unlimited').', categories='.($shop->max_categories ?: 'unlimited').')', $shop->id, $admin);
 
         return response()->json($shop->to_dict(true));
     }
@@ -272,11 +318,11 @@ class ShopController extends Controller
     public function qrCode(Request $request, string $username)
     {
         $shop = Shop::where('username', $username)->first();
-        if (!$shop || $shop->status !== 'active' || $shop->is_expired()) {
+        if (! $shop || $shop->status !== 'active' || $shop->is_expired()) {
             throw new HttpException(404, 'Shop not found');
         }
 
-        $url = $request->input('url', env('STORE_URL', 'http://localhost:3000') . "/{$shop->username}");
+        $url = $request->input('url', env('STORE_URL', 'http://localhost:3000')."/{$shop->username}");
         $logoPath = '';
         if ($shop->logo) {
             $candidate = public_path(ltrim($shop->logo, '/'));

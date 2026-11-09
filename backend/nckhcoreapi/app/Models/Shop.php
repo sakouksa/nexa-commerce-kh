@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -74,42 +73,57 @@ class Shop extends Model
 
     public function slideshow_list(): array
     {
-        if (empty($this->slideshow)) return [];
+        if (empty($this->slideshow)) {
+            return [];
+        }
         $decoded = json_decode($this->slideshow, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function social_media_dict(): array
     {
-        if (empty($this->social_media)) return [];
+        if (empty($this->social_media)) {
+            return [];
+        }
         $decoded = json_decode($this->social_media, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function theme_dict(): array
     {
-        if (empty($this->theme)) return [];
+        if (empty($this->theme)) {
+            return [];
+        }
         $decoded = json_decode($this->theme, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function aba_dict(): array
     {
-        if (empty($this->aba_settings)) return [];
+        if (empty($this->aba_settings)) {
+            return [];
+        }
         $decoded = json_decode($this->aba_settings, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function telegram_dict(): array
     {
-        if (empty($this->telegram_settings)) return [];
+        if (empty($this->telegram_settings)) {
+            return [];
+        }
         $decoded = json_decode($this->telegram_settings, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function is_expired(): bool
     {
-        return !empty($this->expires_at) && $this->expires_at->isPast();
+        return ! empty($this->expires_at) && $this->expires_at->isPast();
     }
 
     public function to_dict(bool $include_private = false): array

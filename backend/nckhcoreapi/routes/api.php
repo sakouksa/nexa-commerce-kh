@@ -50,24 +50,28 @@ Route::prefix('auth')->group(function () {
 // ==================== SHOPS ====================
 Route::prefix('shops')->group(function () {
     // Public shop endpoints
-    Route::get('/public/{shop_id}', [ShopController::class, 'getByIdPublic']);
+    Route::get('/public/{shop_id}', [ShopController::class, 'getByIdPublic'])->whereNumber('shop_id');
     Route::get('/{username}/qr', [ShopController::class, 'qrCode']);
     Route::get('/{username}/mini', [ShopController::class, 'getShopMini']);
 
     // Authenticated shop management
     Route::middleware('jwt.auth')->group(function () {
-        Route::get('/{shop_id}/detail', [ShopController::class, 'detail']);
-        Route::get('/{shop_id}/owner', [ShopController::class, 'checkOwner']);
-        Route::put('/{shop_id}/update', [ShopController::class, 'update']);
+        Route::get('/{shop_id}', [ShopController::class, 'detail'])->whereNumber('shop_id');
+        Route::get('/{shop_id}/detail', [ShopController::class, 'detail'])->whereNumber('shop_id');
+        Route::get('/{shop_id}/owner', [ShopController::class, 'checkOwner'])->whereNumber('shop_id');
+        Route::put('/{shop_id}', [ShopController::class, 'update'])->whereNumber('shop_id');
+        Route::put('/{shop_id}/update', [ShopController::class, 'update'])->whereNumber('shop_id');
 
         // Admin only
         Route::middleware('role.admin')->group(function () {
             Route::get('', [ShopController::class, 'index']);
             Route::post('', [ShopController::class, 'store']);
-            Route::put('/{shop_id}/status', [ShopController::class, 'toggleStatus']);
-            Route::delete('/{shop_id}', [ShopController::class, 'destroy']);
-            Route::post('/{shop_id}/set-expiry', [ShopController::class, 'setExpiry']);
-            Route::post('/{shop_id}/set-limits', [ShopController::class, 'setLimits']);
+            Route::put('/{shop_id}/status', [ShopController::class, 'toggleStatus'])->whereNumber('shop_id');
+            Route::delete('/{shop_id}', [ShopController::class, 'destroy'])->whereNumber('shop_id');
+            Route::match(['post', 'put'], '/{shop_id}/set-expiry', [ShopController::class, 'setExpiry'])->whereNumber('shop_id');
+            Route::match(['post', 'put'], '/{shop_id}/expiry', [ShopController::class, 'setExpiry'])->whereNumber('shop_id');
+            Route::match(['post', 'put'], '/{shop_id}/set-limits', [ShopController::class, 'setLimits'])->whereNumber('shop_id');
+            Route::match(['post', 'put'], '/{shop_id}/limits', [ShopController::class, 'setLimits'])->whereNumber('shop_id');
         });
     });
 
@@ -194,6 +198,8 @@ Route::prefix('reports')->middleware('jwt.auth')->group(function () {
     Route::get('/customers', [ReportController::class, 'customers']);
     Route::get('/stock', [ReportController::class, 'stock']);
     Route::get('/sales/export', [ReportController::class, 'salesExport']);
+    Route::get('/telegram/summary', [ReportController::class, 'telegramSummary']);
+    Route::post('/telegram/dispatch', [ReportController::class, 'telegramDispatch']);
 });
 
 // ==================== SETTINGS ====================
@@ -202,6 +208,7 @@ Route::prefix('settings')->middleware('jwt.auth')->group(function () {
     Route::post('', [SettingController::class, 'update']);
     Route::get('/platform', [SettingController::class, 'platform']);
     Route::get('/stats', [SettingController::class, 'stats']);
+    Route::get('/activity', [TelegramController::class, 'listActivity']);
 });
 
 // ==================== UPLOADS ====================
@@ -231,6 +238,7 @@ Route::get('/activity', [TelegramController::class, 'listActivity'])->middleware
 
 // ==================== BACKUP ====================
 Route::prefix('backup')->middleware('jwt.auth')->group(function () {
+    Route::get('/export', [BackupController::class, 'adminExport'])->middleware('role.admin');
     Route::get('/admin/export', [BackupController::class, 'adminExport'])->middleware('role.admin');
     Route::get('/shop/{shop_id}/export', [BackupController::class, 'shopExport']);
     Route::post('/shop/{shop_id}/create', [BackupController::class, 'createShopBackup']);

@@ -1,0 +1,9 @@
+{
+  "prev": "Prev",
+  "next": "Next",
+  "showingZero": "Showing 0 records",
+  "showingRecords": "Showing {{start}}-{{end}} of {{total}} records",
+  "showPerPage": "Show",
+  "perPage": "{{count}} / page",
+  "rows": "Rows"
+}

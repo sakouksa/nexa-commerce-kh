@@ -1,0 +1,16 @@
+{
+  "title": "Activity Logs",
+  "subtitle": "Audit trail of platform security, tenant actions, and administrative operations",
+  "filterUsername": "Filter by Username",
+  "filterShopId": "Filter by Shop ID",
+  "applyFilters": "Apply Filters",
+  "resetFilters": "Reset",
+  "exportCsv": "Export CSV",
+  "user": "User",
+  "action": "Action",
+  "description": "Description",
+  "ipAddress": "IP Address",
+  "shop": "Shop",
+  "timestamp": "Timestamp",
+  "noLogs": "No activity logs recorded yet"
+}

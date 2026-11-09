@@ -1,0 +1,9 @@
+{
+  "prev": "មុន",
+  "next": "បន្ទាប់",
+  "showingZero": "បង្ហាញ 0 កំណត់ត្រា",
+  "showingRecords": "បង្ហាញ {{start}}-{{end}} នៃ {{total}} កំណត់ត្រា",
+  "showPerPage": "បង្ហាញ",
+  "perPage": "{{count}} / ទំព័រ",
+  "rows": "ជួរ"
+}

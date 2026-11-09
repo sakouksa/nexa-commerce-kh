@@ -3,24 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\ActivityLog;
-use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\JwtService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class ClonedBusinessLogicTest extends TestCase
 {
     protected string $adminToken;
+
     protected string $ownerToken;
+
     protected string $customerToken;
+
     protected Shop $shop;
+
     protected Customer $customer;
 
     protected function setUp(): void
@@ -30,7 +30,7 @@ class ClonedBusinessLogicTest extends TestCase
         $jwt = app(JwtService::class);
 
         $admin = User::where('role', 'admin')->first();
-        if (!$admin) {
+        if (! $admin) {
             $admin = User::create([
                 'username' => 'admin_test',
                 'email' => 'admin_test@ministorekh.com',
@@ -39,10 +39,10 @@ class ClonedBusinessLogicTest extends TestCase
                 'status' => 'active',
             ]);
         }
-        $this->adminToken = $jwt->createToken(['sub' => (string)$admin->id, 'role' => 'admin']);
+        $this->adminToken = $jwt->createToken(['sub' => (string) $admin->id, 'role' => 'admin']);
 
         $this->shop = Shop::where('username', 'demo')->first();
-        if (!$this->shop) {
+        if (! $this->shop) {
             $this->shop = Shop::create([
                 'username' => 'demo',
                 'shop_name' => 'Demo Shop',
@@ -64,7 +64,7 @@ class ClonedBusinessLogicTest extends TestCase
         $this->shop->save();
 
         $owner = User::where('shop_id', $this->shop->id)->first();
-        if (!$owner) {
+        if (! $owner) {
             $owner = User::create([
                 'username' => 'owner_test',
                 'email' => 'owner_test@ministorekh.com',
@@ -74,7 +74,7 @@ class ClonedBusinessLogicTest extends TestCase
                 'status' => 'active',
             ]);
         }
-        $this->ownerToken = $jwt->createToken(['sub' => (string)$owner->id, 'role' => 'shop_owner', 'shop_id' => $this->shop->id]);
+        $this->ownerToken = $jwt->createToken(['sub' => (string) $owner->id, 'role' => 'shop_owner', 'shop_id' => $this->shop->id]);
 
         $this->customer = Customer::where('shop_id', $this->shop->id)->first() ?: Customer::create([
             'shop_id' => $this->shop->id,
@@ -85,7 +85,7 @@ class ClonedBusinessLogicTest extends TestCase
         ]);
 
         $this->customerToken = $jwt->createToken([
-            'sub' => (string)$this->customer->id,
+            'sub' => (string) $this->customer->id,
             'role' => 'customer',
             'shop_id' => $this->shop->id,
             'tg_id' => $this->customer->telegram_id,
@@ -94,7 +94,7 @@ class ClonedBusinessLogicTest extends TestCase
 
     public function test_platform_charts_endpoint(): void
     {
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->adminToken)
             ->getJson('/api/plans/charts');
 
         $response->assertStatus(200)
@@ -113,7 +113,7 @@ class ClonedBusinessLogicTest extends TestCase
     public function test_reseller_customers_and_get_reseller(): void
     {
         $reseller = User::where('role', 'reseller')->first();
-        if (!$reseller) {
+        if (! $reseller) {
             $reseller = User::create([
                 'username' => 'reseller_demo',
                 'email' => 'reseller@demo.com',
@@ -125,14 +125,14 @@ class ClonedBusinessLogicTest extends TestCase
         }
 
         // Get single reseller
-        $r1 = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+        $r1 = $this->withHeader('Authorization', 'Bearer '.$this->adminToken)
             ->getJson("/api/plans/resellers/{$reseller->id}");
         $r1->assertStatus(200)
             ->assertJsonFragment(['id' => $reseller->id, 'role' => 'reseller'])
             ->assertJsonStructure(['id', 'username', 'referral_code', 'shops', 'customers']);
 
         // Get reseller customers
-        $r2 = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+        $r2 = $this->withHeader('Authorization', 'Bearer '.$this->adminToken)
             ->getJson("/api/plans/resellers/{$reseller->id}/customers");
         $r2->assertStatus(200)
             ->assertJsonStructure([
@@ -144,7 +144,7 @@ class ClonedBusinessLogicTest extends TestCase
 
     public function test_order_tracking_and_history_and_status(): void
     {
-        $orderNum = 'ORD-TRACK-' . uniqid();
+        $orderNum = 'ORD-TRACK-'.uniqid();
         $order = Order::create([
             'shop_id' => $this->shop->id,
             'customer_id' => $this->customer->id,
@@ -159,7 +159,7 @@ class ClonedBusinessLogicTest extends TestCase
         ]);
 
         // 1. Public Track
-        $trackResp = $this->getJson('/api/orders/public/track?order_number=' . $orderNum);
+        $trackResp = $this->getJson('/api/orders/public/track?order_number='.$orderNum);
         $trackResp->assertStatus(200)
             ->assertJsonFragment(['order_number' => $orderNum]);
 
@@ -173,7 +173,7 @@ class ClonedBusinessLogicTest extends TestCase
             ->assertJsonStructure(['shop_id', 'customer', 'count', 'orders']);
 
         // 3. Update Status
-        $statusResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
+        $statusResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
             ->putJson("/api/orders/{$order->id}/status", [
                 'order_status' => 'processing',
                 'payment_status' => 'paid',
@@ -185,7 +185,7 @@ class ClonedBusinessLogicTest extends TestCase
             ]);
 
         // 4. Admin List All Orders
-        $allResp = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+        $allResp = $this->withHeader('Authorization', 'Bearer '.$this->adminToken)
             ->getJson('/api/orders/all');
         $allResp->assertStatus(200)
             ->assertJsonIsArray();
@@ -194,21 +194,21 @@ class ClonedBusinessLogicTest extends TestCase
     public function test_customer_orders_and_search(): void
     {
         // 1. Customer my orders (authenticated customer)
-        $resp = $this->withHeader('Authorization', 'Bearer ' . $this->customerToken)
+        $resp = $this->withHeader('Authorization', 'Bearer '.$this->customerToken)
             ->getJson('/api/customers/auth/orders');
         $resp->assertStatus(200)
             ->assertJsonStructure(['customer', 'count', 'orders']);
 
         // 2. Get customer with orders
-        $cResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
+        $cResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
             ->getJson("/api/customers/{$this->customer->id}");
         $cResp->assertStatus(200)
             ->assertJsonFragment(['id' => $this->customer->id])
             ->assertJsonStructure(['id', 'orders']);
 
         // 3. Customer search
-        $sResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
-            ->getJson("/api/customers?shop_id={$this->shop->id}&search=" . urlencode($this->customer->name));
+        $sResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
+            ->getJson("/api/customers?shop_id={$this->shop->id}&search=".urlencode($this->customer->name));
         $sResp->assertStatus(200)
             ->assertJsonIsArray();
     }
@@ -217,7 +217,7 @@ class ClonedBusinessLogicTest extends TestCase
     {
         $order = Order::create([
             'shop_id' => $this->shop->id,
-            'order_number' => 'ORD-PAY-' . uniqid(),
+            'order_number' => 'ORD-PAY-'.uniqid(),
             'customer_name' => 'Pay Customer',
             'total' => 25,
             'payment_status' => 'pending',
@@ -237,7 +237,7 @@ class ClonedBusinessLogicTest extends TestCase
         $this->assertEquals('failed', $order->fresh()->payment_status);
 
         // ABA Test
-        $tResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
+        $tResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
             ->postJson('/api/payments/aba/test', ['shop_id' => $this->shop->id]);
         $tResp->assertStatus(200)
             ->assertJsonStructure(['ok', 'profile_id', 'transaction_id', 'checkout_url']);
@@ -246,7 +246,7 @@ class ClonedBusinessLogicTest extends TestCase
     public function test_telegram_settings_and_activity(): void
     {
         // Telegram settings
-        $tResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
+        $tResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
             ->getJson("/api/telegram/settings?shop_id={$this->shop->id}");
         $tResp->assertStatus(200)
             ->assertJsonStructure(['bot_token', 'chat_id', 'enabled', 'profile_id', 'secret_key', 'linked_chats']);
@@ -258,7 +258,7 @@ class ClonedBusinessLogicTest extends TestCase
             'description' => 'Test activity log entry',
         ]);
 
-        $aResp = $this->withHeader('Authorization', 'Bearer ' . $this->ownerToken)
+        $aResp = $this->withHeader('Authorization', 'Bearer '.$this->ownerToken)
             ->getJson("/api/activity?shop_id={$this->shop->id}");
         $aResp->assertStatus(200)
             ->assertJsonIsArray();
@@ -284,7 +284,7 @@ class ClonedBusinessLogicTest extends TestCase
             'type' => 'system',
             'shops' => [
                 [
-                    'username' => 'imported_shop_' . time(),
+                    'username' => 'imported_shop_'.time(),
                     'shop_name' => 'Imported Shop',
                     'status' => 'active',
                 ],
@@ -299,7 +299,7 @@ class ClonedBusinessLogicTest extends TestCase
 
         $jsonFile = UploadedFile::fake()->createWithContent('system_backup.json', json_encode($payload));
 
-        $resp = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+        $resp = $this->withHeader('Authorization', 'Bearer '.$this->adminToken)
             ->post('/api/backup/admin/import', [
                 'file' => $jsonFile,
             ]);

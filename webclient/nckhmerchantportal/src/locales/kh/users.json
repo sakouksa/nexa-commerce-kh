@@ -1,0 +1,21 @@
+{
+  "title": "គ្រប់គ្រង Users",
+  "subtitle": "គ្រប់គ្រង Platform Admins, Shop Owners និង Resellers",
+  "createUser": "បន្ថែម User ថ្មី",
+  "editUser": "កែសម្រួល User",
+  "user": "User",
+  "email": "Email",
+  "role": "Role (តួនាទី)",
+  "roles": {
+    "superadmin": "Super Admin",
+    "admin": "Admin",
+    "shop_owner": "Shop Owner",
+    "reseller": "Reseller"
+  },
+  "assignedShop": "Shop ដែលបានចាត់តាំង",
+  "noShop": "មិនបានចាត់តាំង Shop ទេ",
+  "resetPassword": "Reset Password",
+  "resetPasswordPrompt": "បញ្ចូល Password ថ្មីសម្រាប់ {{username}}:",
+  "deleteUserConfirm": "តើអ្នកពិតជាចង់លុប User \"{{username}}\" មែនទេ?",
+  "passwordHelp": "ទុកទទេប្រសិនបើមិនចង់ប្តូរ Password"
+}

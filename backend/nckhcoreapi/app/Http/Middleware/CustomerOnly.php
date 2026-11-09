@@ -11,7 +11,7 @@ class CustomerOnly
     public function handle(Request $request, Closure $next): Response
     {
         $customer = $request->attributes->get('customer');
-        if (!$customer) {
+        if (! $customer) {
             return response()->json(['detail' => 'Please login with Telegram to continue'], 401);
         }
 

@@ -1,0 +1,18 @@
+{
+  "title": "Categories",
+  "subtitle": "Manage store product categories",
+  "searchPlaceholder": "Search by category name...",
+  "addCategory": "Add Category",
+  "editCategory": "Edit Category",
+  "addCategorySubtitle": "Enter details for the new product category",
+  "editCategorySubtitle": "Modify details for this category",
+  "name": "Category Name",
+  "namePlaceholder": "e.g. Snacks, Drinks, Desserts...",
+  "slugPlaceholder": "drinks, snacks, desserts...",
+  "description": "Description",
+  "descPlaceholder": "Brief description of this category...",
+  "activeStatus": "Active Status",
+  "activeDesc": "Display this category in store and POS",
+  "nameRequired": "Category name is required"
+}
+

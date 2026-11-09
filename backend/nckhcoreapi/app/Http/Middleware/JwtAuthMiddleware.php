@@ -7,8 +7,10 @@ use App\Models\User;
 use App\Services\JwtService;
 use Closure;
 use Exception;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class JwtAuthMiddleware
 {
@@ -22,41 +24,45 @@ class JwtAuthMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $header = $request->header('Authorization', '');
-        if (!str_starts_with($header, 'Bearer ')) {
-            return response()->json(['detail' => 'Invalid or missing token'], 401);
+        if (! str_starts_with($header, 'Bearer ')) {
+            throw new AuthenticationException('Invalid or missing token');
         }
 
         $token = substr($header, 7);
         try {
             $payload = $this->jwtService->decodeToken($token);
         } catch (Exception $e) {
-            return response()->json(['detail' => 'Invalid or expired token'], 401);
+            throw new AuthenticationException('Invalid or expired token');
         }
 
         $role = $payload['role'] ?? null;
         $sub = $payload['sub'] ?? null;
 
-        if (!$sub) {
-            return response()->json(['detail' => 'Invalid token payload'], 401);
+        if (! $sub) {
+            throw new AuthenticationException('Invalid token payload');
         }
 
         if ($role === 'customer') {
             $customer = Customer::find((int) $sub);
-            if (!$customer) {
-                return response()->json(['detail' => 'Customer not found'], 401);
+            if (! $customer) {
+                throw new AuthenticationException('Customer not found');
             }
             $request->attributes->set('customer', $customer);
             $request->attributes->set('customer_id', $customer->id);
             $request->attributes->set('shop_id', $customer->shop_id);
         } else {
             $user = User::find((int) $sub);
-            if (!$user) {
-                return response()->json(['detail' => 'User not found'], 401);
+            if (! $user) {
+                throw new AuthenticationException('User not found');
             }
             if ($user->status !== 'active') {
-                return response()->json(['detail' => 'Your account has been suspended'], 403);
+                throw new HttpException(403, 'Your account has been suspended');
             }
-            $request->setUserResolver(fn() => $user);
+            $request->setUserResolver(fn () => $user);
+            $request->attributes->set('user_id', $user->id);
+            if ($user->shop_id !== null) {
+                $request->attributes->set('shop_id', $user->shop_id);
+            }
         }
 
         return $next($request);

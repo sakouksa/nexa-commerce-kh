@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Helpers\ShopHelper;
 use App\Models\ActivityLog;
 use App\Models\Shop;
+use App\Services\StockService;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TelegramController extends Controller
@@ -20,49 +22,56 @@ class TelegramController extends Controller
         if ($myChatMember) {
             $newStatus = $myChatMember['new_chat_member']['status'] ?? '';
             $newChatId = $myChatMember['chat']['id'] ?? null;
-            if ($newStatus === 'member' && $newChatId) {
-                foreach (Shop::all() as $s) {
-                    $tg = $s->telegram_dict();
-                    if (trim($tg['bot_token'] ?? '') === $token) {
-                        $profile = TelegramService::ensureShopProfile($s);
-                        $shopName = $s->shop_name ?: $s->username;
-                        $msg = "👋 ស្វាគមន៍! Bot របស់ <b>{$shopName}</b> ត្រូវបានបន្ថែមចូលក្រុមនេះ! 🏪\n\n" .
-                               "ដើម្បីទទួល <b>ការជូនដំណឹងការបង់ប្រាក់ជោគជ័យ</b> របស់ហាងនៅទីនេះ សូមផ្ញើ:\n\n" .
-                               "<code>LINK {$profile['profile_id']} {$profile['secret_key']}</code>\n\n" .
-                               "អ្នកនឹងទទួលបានតែការជូនដំណឹងពេលអតិថិជនបង់ប្រាក់រួច ជាមួយព័ត៌មានលម្អិត + ស្តុក។";
-                        TelegramService::sendTelegramMessage($token, (string) $newChatId, $msg);
-                        break;
-                    }
+            $candidates = Shop::where('telegram_settings', 'like', "%{$token}%")->get();
+            foreach ($candidates as $s) {
+                $tg = $s->telegram_dict();
+                if (trim($tg['bot_token'] ?? '') === $token) {
+                    $profile = TelegramService::ensureShopProfile($s);
+                    $shopName = $s->shop_name ?: $s->username;
+                    $msg = "👋 ស្វាគមន៍! Bot របស់ <b>{$shopName}</b> ត្រូវបានបន្ថែមចូលក្រុមនេះ! 🏪\n\n".
+                           "ដើម្បីទទួល <b>ការជូនដំណឹងការបង់ប្រាក់ជោគជ័យ</b> របស់ហាងនៅទីនេះ សូមផ្ញើ:\n\n".
+                           "<code>LINK {$profile['profile_id']} {$profile['secret_key']}</code>\n\n".
+                           'អ្នកនឹងទទួលបានតែការជូនដំណឹងពេលអតិថិជនបង់ប្រាក់រួច ជាមួយព័ត៌មានលម្អិត + ស្តុក។';
+                    TelegramService::sendTelegramMessage($token, (string) $newChatId, $msg);
+                    break;
                 }
             }
+
             return response()->json(['ok' => true]);
         }
 
         $message = $update['message'] ?? null;
-        if (!$message) return response()->json(['ok' => true]);
+        if (! $message) {
+            return response()->json(['ok' => true]);
+        }
 
         $chatId = $message['chat']['id'] ?? null;
         $text = trim($message['text'] ?? '');
-        if (!$chatId || !$text) return response()->json(['ok' => true]);
+        if (! $chatId || ! $text) {
+            return response()->json(['ok' => true]);
+        }
 
         // Find shop with this token
         $shop = null;
-        foreach (Shop::all() as $s) {
+        $candidates = Shop::where('telegram_settings', 'like', "%{$token}%")->get();
+        foreach ($candidates as $s) {
             if (trim($s->telegram_dict()['bot_token'] ?? '') === $token) {
                 $shop = $s;
                 break;
             }
         }
-        if (!$shop) return response()->json(['ok' => true]);
+        if (! $shop) {
+            return response()->json(['ok' => true]);
+        }
 
         $lower = strtolower($text);
         if ($lower === '/start' || $lower === 'start') {
             $profile = TelegramService::ensureShopProfile($shop);
             $shopName = $shop->shop_name ?: $shop->username;
-            $reply = "សូមស្វាគមន៍មកកាន់ <b>{$shopName}</b>! 🏪\n\n" .
-                     "ដើម្បីទទួល <b>ការជូនដំណឹងនៅពេលអតិថិជនបង់ប្រាក់ជោគជ័យ</b> (ព័ត៌មានលម្អិតទំនិញ + ស្តុក) នៅក្នុង chat នេះ សូមផ្ញើ:\n\n" .
-                     "<code>LINK {$profile['profile_id']} {$profile['secret_key']}</code>\n\n" .
-                     "អ្នកអាចរក Profile ID និង Secret Key នៅក្នុង <b>Shop Dashboard → Telegram Bot</b> ។";
+            $reply = "សូមស្វាគមន៍មកកាន់ <b>{$shopName}</b>! 🏪\n\n".
+                     "ដើម្បីទទួល <b>ការជូនដំណឹងនៅពេលអតិថិជនបង់ប្រាក់ជោគជ័យ</b> (ព័ត៌មានលម្អិតទំនិញ + ស្តុក) នៅក្នុង chat នេះ សូមផ្ញើ:\n\n".
+                     "<code>LINK {$profile['profile_id']} {$profile['secret_key']}</code>\n\n".
+                     'អ្នកអាចរក Profile ID និង Secret Key នៅក្នុង <b>Shop Dashboard → Telegram Bot</b> ។';
             TelegramService::sendTelegramMessage($token, (string) $chatId, $reply);
         } elseif (str_starts_with($lower, 'link ')) {
             $parts = explode(' ', $text);
@@ -70,7 +79,8 @@ class TelegramController extends Controller
                 $pid = $parts[1];
                 $sec = $parts[2];
                 $matched = null;
-                foreach (Shop::all() as $s) {
+                $linkCandidates = Shop::where('telegram_settings', 'like', "%{$pid}%")->get();
+                foreach ($linkCandidates as $s) {
                     $tg = $s->telegram_dict();
                     if (($tg['profile_id'] ?? '') === $pid && ($tg['secret_key'] ?? '') === $sec) {
                         $matched = $s;
@@ -80,18 +90,18 @@ class TelegramController extends Controller
                 if ($matched) {
                     $tg = $matched->telegram_dict();
                     $chats = $tg['linked_chats'] ?? [];
-                    if (!in_array($chatId, $chats)) {
+                    if (! in_array($chatId, $chats)) {
                         $chats[] = $chatId;
                         $tg['linked_chats'] = $chats;
                         $matched->telegram_settings = json_encode($tg, JSON_UNESCAPED_UNICODE);
                         $matched->save();
                     }
-                    $reply = "✅ <b>ភ្ជាប់ជោគជ័យ!</b>\n\n" .
-                             "Chat នេះត្រូវបានភ្ជាប់ទៅកាន់ <b>" . ($matched->shop_name ?: $matched->username) . "</b>។ " .
-                             "រាល់ពេលមានអតិថិជនបង់ប្រាក់ជោគជ័យ អ្នកនឹងទទួលបានព័ត៌មានលម្អិតនៅទីនេះ។";
+                    $reply = "✅ <b>ភ្ជាប់ជោគជ័យ!</b>\n\n".
+                             'Chat នេះត្រូវបានភ្ជាប់ទៅកាន់ <b>'.($matched->shop_name ?: $matched->username).'</b>។ '.
+                             'រាល់ពេលមានអតិថិជនបង់ប្រាក់ជោគជ័យ អ្នកនឹងទទួលបានព័ត៌មានលម្អិតនៅទីនេះ។';
                     TelegramService::sendTelegramMessage($token, (string) $chatId, $reply);
                 } else {
-                    TelegramService::sendTelegramMessage($token, (string) $chatId, "❌ Profile ID ឬ Secret Key មិនត្រឹមត្រូវទេ។");
+                    TelegramService::sendTelegramMessage($token, (string) $chatId, '❌ Profile ID ឬ Secret Key មិនត្រឹមត្រូវទេ។');
                 }
             }
         }
@@ -106,14 +116,14 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $message = $request->input('message', '🧪 Test notification from Mini Shop Platform');
         $ok = TelegramService::sendShopNotification($shop, $message);
 
-        if (!$ok) {
+        if (! $ok) {
             throw new HttpException(400, 'Could not send test message. Check bot token and ensure the bot has been started.');
         }
 
@@ -134,7 +144,7 @@ class TelegramController extends Controller
             $logs = ActivityLog::orderBy('id', 'desc')->take(50)->get();
         }
 
-        return response()->json($logs->map(fn($l) => $l->to_dict())->toArray());
+        return response()->json($logs->map(fn ($l) => $l->to_dict())->toArray());
     }
 
     public function profile(Request $request, int $shopId)
@@ -143,7 +153,7 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -167,13 +177,13 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $tg = $shop->telegram_dict();
         $chats = $tg['linked_chats'] ?? [];
-        if (!in_array($chatId, $chats)) {
+        if (! in_array($chatId, $chats)) {
             $chats[] = $chatId;
             $tg['linked_chats'] = $chats;
             $shop->telegram_settings = json_encode($tg, JSON_UNESCAPED_UNICODE);
@@ -191,12 +201,12 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $tg = $shop->telegram_dict();
-        $chats = array_values(array_filter($tg['linked_chats'] ?? [], fn($c) => (string)$c !== (string)$chatId));
+        $chats = array_values(array_filter($tg['linked_chats'] ?? [], fn ($c) => (string) $c !== (string) $chatId));
         $tg['linked_chats'] = $chats;
         $shop->telegram_settings = json_encode($tg, JSON_UNESCAPED_UNICODE);
         $shop->save();
@@ -211,13 +221,13 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $tg = TelegramService::ensureShopProfile($shop);
         $botToken = trim($tg['bot_token'] ?? '');
-        if (!$botToken) {
+        if (! $botToken) {
             throw new HttpException(400, 'Bot token is not configured');
         }
 
@@ -225,13 +235,13 @@ class TelegramController extends Controller
         $webhookUrl = "{$baseUrl}/api/telegram/webhook/{$botToken}";
 
         try {
-            $resp = \Illuminate\Support\Facades\Http::timeout(20)->post("https://api.telegram.org/bot{$botToken}/setWebhook", [
+            $resp = Http::timeout(20)->post("https://api.telegram.org/bot{$botToken}/setWebhook", [
                 'url' => $webhookUrl,
                 'allowed_updates' => ['message', 'my_chat_member'],
             ]);
             $data = $resp->json() ?? [];
         } catch (\Exception $e) {
-            throw new HttpException(500, "Could not reach Telegram: " . $e->getMessage());
+            throw new HttpException(500, 'Could not reach Telegram: '.$e->getMessage());
         }
 
         if (empty($data['ok'])) {
@@ -255,7 +265,7 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -265,7 +275,7 @@ class TelegramController extends Controller
         return response()->json([
             'bot_token' => $botToken,
             'chat_id' => $tg['chat_id'] ?? '',
-            'enabled' => !empty($tg['enabled']),
+            'enabled' => ! empty($tg['enabled']),
             'profile_id' => $tg['profile_id'] ?? '',
             'secret_key' => $tg['secret_key'] ?? '',
             'linked_chats' => $tg['linked_chats'] ?? [],
@@ -280,12 +290,12 @@ class TelegramController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
-        $ok = \App\Services\StockService::sendLowStockAlerts($shop);
-        if (!$ok) {
+        $ok = StockService::sendLowStockAlerts($shop);
+        if (! $ok) {
             throw new HttpException(400, 'No low-stock items, or the bot token / chat ID is not configured in Telegram Settings');
         }
 
@@ -297,6 +307,9 @@ class TelegramController extends Controller
         $user = $request->user();
         $shopId = $request->filled('shop_id') ? (int) $request->input('shop_id') : null;
         $username = trim((string) $request->input('username', ''));
+        $action = trim((string) $request->input('action', ''));
+        $status = trim((string) $request->input('status', ''));
+        $search = trim((string) $request->input('search', ''));
         $limit = min(500, max(1, (int) $request->input('limit', 100)));
 
         $q = ActivityLog::query();
@@ -309,9 +322,23 @@ class TelegramController extends Controller
         if ($username) {
             $q->where('username', 'like', "%{$username}%");
         }
+        if ($action && $action !== 'all') {
+            $q->where('action', $action);
+        }
+        if ($status && $status !== 'all') {
+            $q->where('status', $status);
+        }
+        if ($search) {
+            $q->where(function ($sub) use ($search) {
+                $sub->where('description', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('action', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%");
+            });
+        }
 
         $logs = $q->orderBy('id', 'desc')->limit($limit)->get();
-        return response()->json($logs->map(fn($l) => $l->to_dict())->toArray());
+
+        return response()->json($logs->map(fn ($l) => $l->to_dict())->toArray());
     }
 }
-

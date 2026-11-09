@@ -33,10 +33,18 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class, 'order_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
     public function getVariationsDict(): array
     {
-        if (empty($this->variations)) return [];
+        if (empty($this->variations)) {
+            return [];
+        }
         $decoded = json_decode($this->variations, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 

@@ -10,64 +10,77 @@ use Illuminate\Support\Facades\DB;
 class StockService
 {
     const DEFAULT_LOW = 5;
+
     const DEFAULT_HIGH = 50;
 
     public static function deductStockForOrder(Order $order): array
     {
-        $summary = [];
+        return DB::transaction(function () use ($order) {
+            $summary = [];
 
-        foreach ($order->items as $item) {
-            $product = Product::find($item->product_id);
-            if (!$product) continue;
+            if (! $order->relationLoaded('items')) {
+                $order->load('items');
+            }
 
-            $before = (int) ($product->quantity ?? 0);
-            $newQty = max(0, $before - (int) $item->quantity);
-            $product->quantity = $newQty;
+            foreach ($order->items as $item) {
+                if (! $item->product_id) {
+                    continue;
+                }
 
-            $entry = [
-                'name' => $product->name,
-                'deducted' => min($before, (int) $item->quantity),
-                'remaining' => $newQty,
-            ];
+                $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
+                if (! $product) {
+                    continue;
+                }
 
-            $orderedVars = $item->getVariationsDict();
-            if (!empty($orderedVars)) {
-                $variations = $product->getVariationsArray();
-                if (!empty($variations)) {
-                    foreach ($variations as &$v) {
-                        $attrs = $v['attrs'] ?? [];
-                        $match = true;
-                        foreach ($orderedVars as $k => $val) {
-                            if (!isset($attrs[$k]) || (string) $attrs[$k] !== (string) $val) {
-                                $match = false;
+                $before = (int) ($product->quantity ?? 0);
+                $newQty = max(0, $before - (int) $item->quantity);
+                $product->quantity = $newQty;
+
+                $entry = [
+                    'name' => $product->name,
+                    'deducted' => min($before, (int) $item->quantity),
+                    'remaining' => $newQty,
+                ];
+
+                $orderedVars = $item->getVariationsDict();
+                if (! empty($orderedVars)) {
+                    $variations = $product->getVariationsArray();
+                    if (! empty($variations)) {
+                        foreach ($variations as &$v) {
+                            $attrs = $v['attrs'] ?? [];
+                            $match = true;
+                            foreach ($orderedVars as $k => $val) {
+                                if (! isset($attrs[$k]) || (string) $attrs[$k] !== (string) $val) {
+                                    $match = false;
+                                    break;
+                                }
+                            }
+                            if ($match) {
+                                $vQty = (int) ($v['quantity'] ?? 0);
+                                $v['quantity'] = max(0, $vQty - (int) $item->quantity);
+                                $varLabelParts = [];
+                                foreach ($orderedVars as $k => $val) {
+                                    $varLabelParts[] = "{$k}: {$val}";
+                                }
+                                $entry['variation'] = [
+                                    'label' => implode(', ', $varLabelParts),
+                                    'deducted' => min($vQty, (int) $item->quantity),
+                                    'remaining' => $v['quantity'],
+                                ];
                                 break;
                             }
                         }
-                        if ($match) {
-                            $vQty = (int) ($v['quantity'] ?? 0);
-                            $v['quantity'] = max(0, $vQty - (int) $item->quantity);
-                            $varLabelParts = [];
-                            foreach ($orderedVars as $k => $val) {
-                                $varLabelParts[] = "{$k}: {$val}";
-                            }
-                            $entry['variation'] = [
-                                'label' => implode(', ', $varLabelParts),
-                                'deducted' => min($vQty, (int) $item->quantity),
-                                'remaining' => $v['quantity'],
-                            ];
-                            break;
-                        }
+                        unset($v);
+                        $product->variations = json_encode($variations, JSON_UNESCAPED_UNICODE);
                     }
-                    unset($v);
-                    $product->variations = json_encode($variations, JSON_UNESCAPED_UNICODE);
                 }
+
+                $product->save();
+                $summary[$product->id] = $entry;
             }
 
-            $product->save();
-            $summary[$product->id] = $entry;
-        }
-
-        return $summary;
+            return $summary;
+        });
     }
 
     public static function getStockReport(int $shopId, int $low = self::DEFAULT_LOW, int $high = self::DEFAULT_HIGH): array
@@ -120,23 +133,26 @@ class StockService
                 $items[] = ['name' => $p->name, 'quantity' => $qty];
             }
         }
+
         return $items;
     }
 
     public static function sendLowStockAlerts(Shop $shop, int $low = self::DEFAULT_LOW): bool
     {
         $lowItems = self::collectLowStockItems($shop, $low);
-        if (empty($lowItems)) return false;
+        if (empty($lowItems)) {
+            return false;
+        }
 
         $lines = [
-            "⚠️ <b>ការជូនដំណឹងអំពីស្តុកទំនិញ (Low Stock Alert)</b>",
-            "",
-            "🏪 <b>ហាង:</b> " . ($shop->shop_name ?: $shop->username),
-            "",
+            '⚠️ <b>ការជូនដំណឹងអំពីស្តុកទំនិញ (Low Stock Alert)</b>',
+            '',
+            '🏪 <b>ហាង:</b> '.($shop->shop_name ?: $shop->username),
+            '',
         ];
 
         foreach ($lowItems as $item) {
-            $status = $item['quantity'] <= 0 ? "❌ អស់ពីស្តុក (0)" : "⚠️ នៅសល់តិច ({$item['quantity']})";
+            $status = $item['quantity'] <= 0 ? '❌ អស់ពីស្តុក (0)' : "⚠️ នៅសល់តិច ({$item['quantity']})";
             $lines[] = "• {$item['name']}: {$status}";
         }
 

@@ -22,7 +22,7 @@ class ProcessPosOrderAction
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -37,7 +37,7 @@ class ProcessPosOrderAction
 
             $order = Order::create([
                 'shop_id' => $shop->id,
-                'order_number' => 'POS' . $shop->id . '-' . time() . '-' . random_int(100, 999),
+                'order_number' => 'POS'.$shop->id.'-'.time().'-'.random_int(100, 999),
                 'customer_name' => $data['customer_name'] ?? 'Walk-in Customer',
                 'customer_phone' => $data['customer_phone'] ?? '',
                 'customer_note' => $data['notes'] ?? 'POS Sale',
@@ -52,21 +52,41 @@ class ProcessPosOrderAction
 
             $itemsTotal = 0.0;
             foreach ($items as $item) {
-                $product = Product::find($item['product_id'] ?? null);
+                $productId = $item['product_id'] ?? null;
+                $product = $productId ? Product::find($productId) : null;
+                if ($product && (int) $product->shop_id !== (int) $shop->id) {
+                    throw new HttpException(400, "Product #{$product->id} does not belong to this shop");
+                }
+
                 $unitPrice = (float) ($item['price'] ?? 0);
-                if ($product && !isset($item['price'])) {
+                if ($product && ! isset($item['price'])) {
                     $unitPrice = $product->sale_price !== null ? (float) $product->sale_price : (float) $product->price;
                 }
                 $qty = (int) ($item['quantity'] ?? 1);
+
+                if ($product) {
+                    $avail = (int) ($product->quantity ?? 0);
+                    if ($qty > $avail) {
+                        throw new HttpException(400, "ទំនិញ '{$product->name}' ក្នុងស្តុកនៅសល់តែ {$avail} ប៉ុណ្ណោះ មិនគ្រប់សម្រាប់ការលក់ឡើយ (Insufficient stock: only {$avail} available)");
+                    }
+                }
+
                 $itemsTotal += $unitPrice * $qty;
+
+                $variationPayload = $item['variations'] ?? ($item['selected_attributes'] ?? null);
+                $variationJson = is_array($variationPayload)
+                    ? json_encode($variationPayload, JSON_UNESCAPED_UNICODE)
+                    : (is_string($variationPayload) ? $variationPayload : '{}');
+
+                $productName = $item['product_name'] ?? ($item['name'] ?? ($product ? $product->name : 'Product'));
 
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $item['product_id'] ?? null,
-                    'product_name' => $item['name'] ?? ($product ? $product->name : 'Product'),
+                    'product_id' => $productId,
+                    'product_name' => $productName,
                     'price' => $unitPrice,
                     'quantity' => $qty,
-                    'variations' => isset($item['variations']) ? json_encode($item['variations'], JSON_UNESCAPED_UNICODE) : '{}',
+                    'variations' => $variationJson,
                 ]);
             }
 
@@ -82,7 +102,7 @@ class ProcessPosOrderAction
 
             ShopHelper::logActivity('pos_order', "POS sale created #{$order->order_number} ({$order->total} {$order->currency}) [{$method}]", $shop->id, $user);
 
-            return $order->load('items');
+            return $order->load(['items', 'shop']);
         });
     }
 }

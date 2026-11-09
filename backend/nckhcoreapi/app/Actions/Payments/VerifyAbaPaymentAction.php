@@ -12,12 +12,12 @@ class VerifyAbaPaymentAction
     public function execute(int $orderId, ?string $transactionId = null): array
     {
         $order = Order::find($orderId);
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
         $shop = $order->shop;
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -37,7 +37,7 @@ class VerifyAbaPaymentAction
         }
 
         $result = AbaService::verifyPayment($order, $shop, $tx);
-        if (!empty($result['verified'])) {
+        if (! empty($result['verified'])) {
             OrderController::markPaid($order, $result['transaction_id'] ?? $tx);
             $order->refresh();
         }

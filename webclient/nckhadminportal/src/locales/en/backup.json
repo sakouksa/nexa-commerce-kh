@@ -1,0 +1,20 @@
+{
+  "title": "Database & System Backup",
+  "subtitle": "Create full system snapshots, export Excel spreadsheets, and manage restore points",
+  "createSnapshot": "Create Backup Snapshot",
+  "exportExcel": "Export Excel Backup",
+  "downloadZip": "Download Full ZIP (with images)",
+  "restoreBackup": "Restore Backup",
+  "uploadPrompt": "Click to select backup file (.zip, .xlsx, .sqlite, .sql)",
+  "backupHistory": "Backup History",
+  "filename": "Filename",
+  "size": "Size",
+  "type": "Type",
+  "createdAt": "Created At",
+  "download": "Download",
+  "restore": "Restore",
+  "restoreConfirm": "Warning: Restoring this backup will overwrite current system state. Continue?",
+  "creating": "Creating Backup...",
+  "exporting": "Exporting...",
+  "restoring": "Restoring System..."
+}

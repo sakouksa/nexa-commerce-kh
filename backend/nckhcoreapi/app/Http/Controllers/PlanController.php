@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ShopHelper;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Order;
@@ -11,16 +10,20 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
 use App\Services\AbaService;
+use App\Services\BackupService;
 use App\Services\PaymentNotConfiguredException;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PlanController extends Controller
 {
-    const OFFER_ENDS = "2026-09-07";
+    const OFFER_ENDS = '2026-09-07';
 
     public static function getPlans(): array
     {
@@ -58,13 +61,16 @@ class PlanController extends Controller
         foreach ($plans as $k => $v) {
             $out[] = array_merge(['id' => $k], $v);
         }
+
         return response()->json($out);
     }
 
     protected function findReseller(?string $code): ?User
     {
         $ref = strtolower(trim($code ?? ''));
-        if (empty($ref)) return null;
+        if (empty($ref)) {
+            return null;
+        }
 
         return User::where('role', 'reseller')
             ->whereRaw('LOWER(referral_code) = ?', [$ref])
@@ -81,7 +87,7 @@ class PlanController extends Controller
         $refCode = trim($request->input('referral_code', ''));
         $successUrl = $request->input('success_url', '');
 
-        if (!$username || !$password) {
+        if (! $username || ! $password) {
             throw new HttpException(400, 'Username and password are required');
         }
         if (Shop::where('username', $username)->exists() || User::where('username', $username)->exists()) {
@@ -89,13 +95,13 @@ class PlanController extends Controller
         }
 
         $plans = self::getPlans();
-        if (!isset($plans[$planKey])) {
+        if (! isset($plans[$planKey])) {
             throw new HttpException(400, 'Invalid plan');
         }
         $plan = $plans[$planKey];
 
         $reseller = $this->findReseller($refCode);
-        if ($refCode && !$reseller) {
+        if ($refCode && ! $reseller) {
             throw new HttpException(400, 'Invalid referral code');
         }
 
@@ -109,31 +115,35 @@ class PlanController extends Controller
         }
 
         $basePrice = (float) $plan['price'];
-        $isFreeStarter = !empty($plan['free']) && $planKey === 'starter';
+        $isFreeStarter = ! empty($plan['free']) && $planKey === 'starter';
         $finalPrice = $isFreeStarter ? 0.0 : max(0.0, round($basePrice - $discount, 2));
 
-        $shop = Shop::create([
-            'username' => $username,
-            'shop_name' => $shopName ?: $username,
-            'status' => $finalPrice <= 0 ? 'active' : 'pending',
-            'plan' => $planKey,
-            'plan_price' => $finalPrice,
-            'plan_discount' => $discount,
-            'plan_started_at' => now(),
-            'expires_at' => $finalPrice <= 0 ? now()->addDays($plan['days']) : null,
-            'max_products' => $plan['max_products'],
-            'max_categories' => $plan['max_categories'],
-            'reseller_id' => $reseller ? $reseller->id : null,
-        ]);
+        $shop = null;
+        $user = null;
+        DB::transaction(function () use (&$shop, &$user, $username, $shopName, $finalPrice, $planKey, $plan, $discount, $reseller, $email, $password) {
+            $shop = Shop::create([
+                'username' => $username,
+                'shop_name' => $shopName ?: $username,
+                'status' => $finalPrice <= 0 ? 'active' : 'pending',
+                'plan' => $planKey,
+                'plan_price' => $finalPrice,
+                'plan_discount' => $discount,
+                'plan_started_at' => now(),
+                'expires_at' => $finalPrice <= 0 ? now()->addDays($plan['days']) : null,
+                'max_products' => $plan['max_products'],
+                'max_categories' => $plan['max_categories'],
+                'reseller_id' => $reseller ? $reseller->id : null,
+            ]);
 
-        $user = User::create([
-            'username' => $username,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'role' => 'shop_owner',
-            'shop_id' => $shop->id,
-            'status' => 'active',
-        ]);
+            $user = User::create([
+                'username' => $username,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'role' => 'shop_owner',
+                'shop_id' => $shop->id,
+                'status' => 'active',
+            ]);
+        });
 
         if ($finalPrice <= 0) {
             // Free starter plan activation
@@ -150,7 +160,7 @@ class PlanController extends Controller
 
         $order = Order::create([
             'shop_id' => $platformShop->id,
-            'order_number' => 'PLN' . time() . random_int(100, 999),
+            'order_number' => 'PLN'.time().random_int(100, 999),
             'customer_name' => $shop->shop_name ?: $shop->username,
             'customer_email' => $user->email,
             'items_total' => $basePrice,
@@ -209,21 +219,25 @@ class PlanController extends Controller
         $order = Order::find($orderId);
         $shop = Shop::find($shopId);
 
-        if (!$order || !$shop) {
+        if (! $order || ! $shop) {
             throw new HttpException(404, 'Order or shop not found');
         }
 
         $plans = self::getPlans();
         $plan = $plans[$shop->plan] ?? $plans['starter'];
 
-        $order->payment_status = 'paid';
-        $order->paid_at = now();
-        if ($tx) $order->transaction_id = $tx;
-        $order->save();
+        DB::transaction(function () use ($order, $shop, $plan, $tx) {
+            $order->payment_status = 'paid';
+            $order->paid_at = now();
+            if ($tx) {
+                $order->transaction_id = $tx;
+            }
+            $order->save();
 
-        $shop->status = 'active';
-        $shop->expires_at = now()->addDays($plan['days']);
-        $shop->save();
+            $shop->status = 'active';
+            $shop->expires_at = now()->addDays($plan['days']);
+            $shop->save();
+        });
 
         return response()->json([
             'ok' => true,
@@ -239,12 +253,12 @@ class PlanController extends Controller
         $successUrl = $request->input('success_url', '');
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
         $plans = self::getPlans();
-        if (!isset($plans[$planKey])) {
+        if (! isset($plans[$planKey])) {
             throw new HttpException(400, 'Invalid plan');
         }
         $plan = $plans[$planKey];
@@ -255,7 +269,7 @@ class PlanController extends Controller
         $price = (float) $plan['price'];
         $order = Order::create([
             'shop_id' => $platformShop->id,
-            'order_number' => 'UPG' . time() . random_int(100, 999),
+            'order_number' => 'UPG'.time().random_int(100, 999),
             'customer_name' => $shop->shop_name ?: $shop->username,
             'items_total' => $price,
             'total' => $price,
@@ -283,7 +297,7 @@ class PlanController extends Controller
     public function shopPlan(int $shopId)
     {
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -309,16 +323,30 @@ class PlanController extends Controller
             return [];
         }
 
+        $shops = Shop::whereIn('id', $shopIds)->get()->keyBy('id');
         $registered = Customer::whereIn('shop_id', $shopIds)->get();
         $orders = Order::whereIn('shop_id', $shopIds)->get();
+
+        $registeredCustomerIds = $registered->pluck('id')->filter()->toArray();
+        $orderCounts = ! empty($registeredCustomerIds)
+            ? Order::whereIn('customer_id', $registeredCustomerIds)
+                ->groupBy('customer_id')
+                ->selectRaw('customer_id, count(*) as count')
+                ->pluck('count', 'customer_id')
+                ->toArray()
+            : [];
 
         $orderCustomers = [];
         foreach ($orders as $o) {
             $key = trim($o->customer_phone ?: ($o->customer_name ?: ''));
-            if (!$key) continue;
-            if ($o->customer_id) continue; // already counted as registered
+            if (! $key) {
+                continue;
+            }
+            if ($o->customer_id) {
+                continue;
+            } // already counted as registered
 
-            if (!isset($orderCustomers[$key])) {
+            if (! isset($orderCustomers[$key])) {
                 $orderCustomers[$key] = [
                     'name' => $o->customer_name ?: '',
                     'phone' => $o->customer_phone ?: '',
@@ -331,8 +359,8 @@ class PlanController extends Controller
 
         $rows = [];
         foreach ($registered as $c) {
-            $shop = Shop::find($c->shop_id);
-            $orderCount = Order::where('customer_id', $c->id)->count();
+            $shop = $shops[$c->shop_id] ?? null;
+            $orderCount = (int) ($orderCounts[$c->id] ?? 0);
             $rows[] = [
                 'id' => $c->id,
                 'type' => 'registered',
@@ -348,7 +376,7 @@ class PlanController extends Controller
         }
 
         foreach ($orderCustomers as $key => $e) {
-            $shop = Shop::find($e['shop_id']);
+            $shop = $shops[$e['shop_id']] ?? null;
             $rows[] = [
                 'id' => null,
                 'type' => 'guest',
@@ -369,9 +397,17 @@ class PlanController extends Controller
     public function listResellers()
     {
         $resellers = User::where('role', 'reseller')->get();
+        if ($resellers->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $allShops = Shop::whereIn('reseller_id', $resellers->pluck('id'))
+            ->get()
+            ->groupBy('reseller_id');
+
         $out = [];
         foreach ($resellers as $r) {
-            $shops = Shop::where('reseller_id', $r->id)->get();
+            $shops = $allShops->get($r->id, collect());
             $shopIds = $shops->pluck('id')->toArray();
             $sales = (float) $shops->where('status', 'active')->sum('plan_price');
             $commission = round($sales * ((float) ($r->commission_rate ?: 0)) / 100.0, 2);
@@ -392,7 +428,7 @@ class PlanController extends Controller
                 'customer_count' => $customerCount,
                 'sales' => round($sales, 2),
                 'commission' => $commission,
-                'shops' => $shops->map(fn($s) => [
+                'shops' => $shops->map(fn ($s) => [
                     'id' => $s->id,
                     'username' => $s->username,
                     'shop_name' => $s->shop_name,
@@ -402,13 +438,14 @@ class PlanController extends Controller
                 ])->values()->toArray(),
             ];
         }
+
         return response()->json($out);
     }
 
     public function resellerCustomers(int $resellerId)
     {
         $reseller = User::where('id', $resellerId)->where('role', 'reseller')->first();
-        if (!$reseller) {
+        if (! $reseller) {
             throw new HttpException(404, 'Reseller not found');
         }
 
@@ -425,7 +462,7 @@ class PlanController extends Controller
     public function getReseller(int $resellerId)
     {
         $reseller = User::where('id', $resellerId)->where('role', 'reseller')->first();
-        if (!$reseller) {
+        if (! $reseller) {
             throw new HttpException(404, 'Reseller not found');
         }
 
@@ -457,7 +494,7 @@ class PlanController extends Controller
 
         $shopIds = $shops->pluck('id')->toArray();
         $customers = self::resellerCustomerData($shopIds);
-        $activeShops = array_filter($shopList, fn($s) => $s['status'] === 'active');
+        $activeShops = array_filter($shopList, fn ($s) => $s['status'] === 'active');
         $sales = (float) array_sum(array_column($activeShops, 'plan_price'));
         $commission = round($sales * ((float) ($reseller->commission_rate ?: 0)) / 100.0, 2);
 
@@ -494,7 +531,7 @@ class PlanController extends Controller
         $code = trim($request->input('referral_code', ''));
         $rate = (float) $request->input('commission_rate', 10.0);
 
-        if (!$username || !$password) {
+        if (! $username || ! $password) {
             throw new HttpException(400, 'Username and password are required');
         }
         if (User::where('username', $username)->exists()) {
@@ -518,15 +555,25 @@ class PlanController extends Controller
     public function updateReseller(Request $request, int $resellerId)
     {
         $reseller = User::where('id', $resellerId)->where('role', 'reseller')->first();
-        if (!$reseller) {
+        if (! $reseller) {
             throw new HttpException(404, 'Reseller not found');
         }
 
-        if ($request->has('email')) $reseller->email = $request->input('email');
-        if ($request->has('referral_code')) $reseller->referral_code = $request->input('referral_code');
-        if ($request->has('commission_rate')) $reseller->commission_rate = (float) $request->input('commission_rate');
-        if ($request->has('discount_max')) $reseller->discount_max = (float) $request->input('discount_max');
-        if ($request->has('status')) $reseller->status = $request->input('status');
+        if ($request->has('email')) {
+            $reseller->email = $request->input('email');
+        }
+        if ($request->has('referral_code')) {
+            $reseller->referral_code = $request->input('referral_code');
+        }
+        if ($request->has('commission_rate')) {
+            $reseller->commission_rate = (float) $request->input('commission_rate');
+        }
+        if ($request->has('discount_max')) {
+            $reseller->discount_max = (float) $request->input('discount_max');
+        }
+        if ($request->has('status')) {
+            $reseller->status = $request->input('status');
+        }
         if ($request->has('commission_paid')) {
             $reseller->commission_paid = $request->input('commission_paid');
             if ($reseller->commission_paid === 'paid') {
@@ -538,17 +585,19 @@ class PlanController extends Controller
         }
 
         $reseller->save();
+
         return response()->json(['ok' => true]);
     }
 
     public function deleteReseller(int $resellerId)
     {
         $reseller = User::where('id', $resellerId)->where('role', 'reseller')->first();
-        if (!$reseller) {
+        if (! $reseller) {
             throw new HttpException(404, 'Reseller not found');
         }
 
         $reseller->delete();
+
         return response()->json(['ok' => true]);
     }
 
@@ -575,7 +624,7 @@ class PlanController extends Controller
             ];
         }
 
-        $active = array_filter($shopRows, fn($s) => $s['status'] === 'active');
+        $active = array_filter($shopRows, fn ($s) => $s['status'] === 'active');
         $sales = (float) array_sum(array_column($active, 'plan_price'));
         $rate = ((float) ($user->commission_rate ?: 0)) / 100.0;
         $commission = round($sales * $rate, 2);
@@ -610,7 +659,7 @@ class PlanController extends Controller
                 ];
             }
         }
-        usort($commissionByShop, fn($a, $b) => $b['commission'] <=> $a['commission']);
+        usort($commissionByShop, fn ($a, $b) => $b['commission'] <=> $a['commission']);
 
         $plansList = [];
         foreach (self::getPlans() as $k => $v) {
@@ -633,7 +682,7 @@ class PlanController extends Controller
             'shops' => $shopRows,
             'charts' => [
                 'signup_months' => $months,
-                'signup_series' => array_map(fn($m) => $signups[$m] ?? 0, $months),
+                'signup_series' => array_map(fn ($m) => $signups[$m] ?? 0, $months),
                 'shops_by_status' => $shopsByStatus,
                 'shops_by_plan' => $shopsByPlan,
                 'commission_by_shop' => array_slice($commissionByShop, 0, 8),
@@ -671,12 +720,12 @@ class PlanController extends Controller
         $shops = Shop::where('reseller_id', $user->id)->get();
         $ts = date('Ymd_His');
         $backupDir = public_path('backups');
-        if (!File::exists($backupDir)) {
+        if (! File::exists($backupDir)) {
             File::makeDirectory($backupDir, 0755, true);
         }
 
         if ($fmt === 'xlsx') {
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $spreadsheet = new Spreadsheet;
             $ws = $spreadsheet->getActiveSheet();
             $ws->setTitle('Reseller');
             $ws->fromArray([
@@ -725,7 +774,7 @@ class PlanController extends Controller
 
             $filename = "reseller_{$user->username}_{$ts}.xlsx";
             $filepath = "{$backupDir}/{$filename}";
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new Xlsx($spreadsheet);
             $writer->save($filepath);
 
             return response()->download($filepath, $filename, [
@@ -745,7 +794,7 @@ class PlanController extends Controller
                     'commission_rate' => (float) $user->commission_rate,
                     'discount_max' => (float) $user->discount_max,
                 ],
-                'shops' => array_map(fn($s) => \App\Services\BackupService::collectShopData($s->id), $shops->all()),
+                'shops' => array_map(fn ($s) => BackupService::collectShopData($s->id), $shops->all()),
             ];
 
             $filename = "reseller_{$user->username}_{$ts}.json";
@@ -760,7 +809,7 @@ class PlanController extends Controller
         // default: ZIP with one JSON per shop + summary
         $filename = "reseller_{$user->username}_{$ts}.zip";
         $filepath = "{$backupDir}/{$filename}";
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($filepath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
             $summary = [
                 'version' => 1,
@@ -777,7 +826,7 @@ class PlanController extends Controller
             ];
             $zip->addFromString('reseller_info.json', json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             foreach ($shops as $s) {
-                $shopData = \App\Services\BackupService::collectShopData($s->id);
+                $shopData = BackupService::collectShopData($s->id);
                 $zip->addFromString("shop_{$s->username}.json", json_encode($shopData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             $zip->close();
@@ -796,16 +845,16 @@ class PlanController extends Controller
         }
 
         $file = $request->file('file');
-        if (!$file) {
+        if (! $file) {
             throw new HttpException(400, 'No file uploaded');
         }
 
         $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, ['json', 'zip'])) {
+        if (! in_array($ext, ['json', 'zip'])) {
             throw new HttpException(400, 'Only .json or .zip backups can be imported');
         }
 
-        $tmpDir = storage_path('app/temp_reseller_import_' . uniqid());
+        $tmpDir = storage_path('app/temp_reseller_import_'.uniqid());
         File::makeDirectory($tmpDir, 0755, true);
         $saved = "{$tmpDir}/import.{$ext}";
         $file->move($tmpDir, "import.{$ext}");
@@ -815,15 +864,15 @@ class PlanController extends Controller
 
         try {
             if ($ext === 'zip') {
-                $zip = new \ZipArchive();
+                $zip = new \ZipArchive;
                 if ($zip->open($saved) === true) {
                     for ($i = 0; $i < $zip->numFiles; $i++) {
                         $name = $zip->getNameIndex($i);
-                        if (!str_ends_with($name, '.json') || $name === 'reseller_info.json') {
+                        if (! str_ends_with($name, '.json') || $name === 'reseller_info.json') {
                             continue;
                         }
                         $content = $zip->getFromIndex($i);
-                        $jsonPath = "{$tmpDir}/" . basename($name);
+                        $jsonPath = "{$tmpDir}/".basename($name);
                         File::put($jsonPath, $content);
 
                         try {
@@ -860,7 +909,9 @@ class PlanController extends Controller
     {
         $content = File::get($filepath);
         $data = json_decode($content, true);
-        if (!$data) return [0, 1];
+        if (! $data) {
+            return [0, 1];
+        }
 
         $payloads = ($data['type'] ?? '') === 'reseller' && isset($data['shops'])
             ? $data['shops']
@@ -872,21 +923,23 @@ class PlanController extends Controller
         foreach ($payloads as $payload) {
             $shopDict = $payload['shop'] ?? [];
             $username = trim($shopDict['username'] ?? '');
-            if (!$username) {
+            if (! $username) {
                 $skipped++;
+
                 continue;
             }
 
             $shop = Shop::where('username', $username)->first();
-            if (!$shop || $shop->reseller_id !== $user->id) {
+            if (! $shop || $shop->reseller_id !== $user->id) {
                 $skipped++;
+
                 continue;
             }
 
-            $tempFile = tempnam(sys_get_temp_dir(), 'shop_imp_') . '.json';
+            $tempFile = tempnam(sys_get_temp_dir(), 'shop_imp_').'.json';
             File::put($tempFile, json_encode($payload, JSON_UNESCAPED_UNICODE));
             try {
-                [$c, $sk, $imgs] = \App\Services\BackupService::importShopBackup($shop->id, $tempFile);
+                [$c, $sk, $imgs] = BackupService::importShopBackup($shop->id, $tempFile);
                 $total += $c;
                 $skipped += $sk;
             } finally {
@@ -924,35 +977,47 @@ class PlanController extends Controller
         $ordersByStatus = Order::select('payment_status', DB::raw('count(*) as count'))
             ->groupBy('payment_status')
             ->get()
-            ->map(fn($row) => ['status' => $row->payment_status ?: 'unknown', 'count' => (int) $row->count])
+            ->map(fn ($row) => ['status' => $row->payment_status ?: 'unknown', 'count' => (int) $row->count])
             ->toArray();
 
         // 3) Shops by plan
         $shopsByPlan = Shop::select('plan', DB::raw('count(*) as count'))
             ->groupBy('plan')
             ->get()
-            ->map(fn($row) => ['plan' => $row->plan ?: 'none', 'count' => (int) $row->count])
+            ->map(fn ($row) => ['plan' => $row->plan ?: 'none', 'count' => (int) $row->count])
             ->toArray();
 
         // 4) Top shops by paid revenue
         $shops = Shop::all();
+        $shopRevenues = Order::where('payment_status', 'paid')
+            ->groupBy('shop_id')
+            ->selectRaw('shop_id, sum(total) as revenue')
+            ->pluck('revenue', 'shop_id')
+            ->toArray();
+
         $top = [];
         foreach ($shops as $s) {
-            $rev = Order::where('shop_id', $s->id)->where('payment_status', 'paid')->sum('total');
+            $rev = (float) ($shopRevenues[$s->id] ?? 0.0);
             $top[] = [
                 'id' => $s->id,
                 'username' => $s->username,
                 'shop_name' => $s->shop_name,
-                'revenue' => round((float) $rev, 2),
+                'revenue' => round($rev, 2),
             ];
         }
-        usort($top, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
+        usort($top, fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
 
         // 5) Resellers: commission + payment status
         $resellers = [];
+        $resellerSales = Shop::where('status', 'active')
+            ->whereNotNull('reseller_id')
+            ->groupBy('reseller_id')
+            ->selectRaw('reseller_id, sum(plan_price) as sales')
+            ->pluck('sales', 'reseller_id')
+            ->toArray();
+
         foreach (User::where('role', 'reseller')->get() as $r) {
-            $rshops = Shop::where('reseller_id', $r->id)->where('status', 'active')->get();
-            $sales = (float) $rshops->sum('plan_price');
+            $sales = (float) ($resellerSales[$r->id] ?? 0.0);
             $resellers[] = [
                 'username' => $r->username,
                 'sales' => round($sales, 2),
@@ -982,7 +1047,7 @@ class PlanController extends Controller
             'top_shops' => array_slice($top, 0, 6),
             'resellers' => $resellers,
             'signup_months' => $months,
-            'signup_series' => array_map(fn($m) => $signups[$m] ?? 0, $months),
+            'signup_series' => array_map(fn ($m) => $signups[$m] ?? 0, $months),
         ]);
     }
 }

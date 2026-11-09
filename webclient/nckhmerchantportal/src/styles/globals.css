@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Merchant Shop Brand Theme - Light Mode (Clean Slate & Shop Brand Orange) */
+    --background: 210 40% 98%;       /* #f8fafc */
+    --foreground: 222 47% 11%;      /* #0f172a */
+    --card: 0 0% 100%;              /* #ffffff */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 20.5 90.2% 48.2%;    /* #ea580c (Shop Brand Orange) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;     /* #f1f5f9 */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 24 100% 97%;          /* #fff7ed */
+    --accent-foreground: 20.5 90.2% 48.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;    /* #e2e8f0 */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 20.5 90.2% 48.2%;
+    --radius: 0.75rem;
+
+    /* Semantic reference variables */
+    --color-sidebar: #0f172a;
+    --color-sidebar-line: rgba(255, 255, 255, 0.08);
+  }
+
+  .dark {
+    /* Merchant Shop Brand Theme - Dark Mode (Deep Slate & Vibrant Orange) */
+    --background: 222 47% 11%;       /* #0f172a */
+    --foreground: 210 40% 98%;      /* #f8fafc */
+    --card: 217 33% 16%;            /* #1a2436 */
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 16%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 20.5 90.2% 52%;      /* #f97316 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 24 100% 12%;
+    --accent-foreground: 20.5 90.2% 65%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 22%;      /* #2b384e */
+    --input: 217.2 32.6% 22%;
+    --ring: 20.5 90.2% 52%;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Manrope', 'Kantumruy Pro', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbar for Chrome, Safari, Edge, and Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* SmartHR FSM specific utility classes */
+.fsm-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(22, 41, 46, 0.03), 0 4px 12px rgba(22, 41, 46, 0.02);
+}
+
+.fsm-panel-header {
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 1rem 1.25rem;
+}
+
+/* Dynamic Theme Bindings for All Buttons, Modals, Forms & Actions */
+:root {
+  --primary-hex: #ec4899;
+  --btn-primary-hex: #ec4899;
+  --sidebar-active-bg: #ec4899;
+}
+
+/* 1. All Primary Buttons & Actions across pages & modals */
+.bg-orange-600,
+.bg-orange-500,
+.bg-\[\#ea580c\],
+.btn-primary,
+.bg-primary {
+  background-color: var(--btn-primary-hex, var(--primary-hex, #ec4899)) !important;
+  color: #ffffff !important;
+}
+
+.hover\:bg-orange-700:hover,
+.hover\:bg-\[\#c2410c\]:hover,
+.hover\:bg-orange-600:hover,
+.hover\:bg-primary\/90:hover,
+.bg-orange-600:hover,
+.btn-primary:hover {
+  filter: brightness(0.92) !important;
+}
+
+/* 2. Text Accents */
+.text-orange-600,
+.text-orange-500,
+.text-\[\#ea580c\] {
+  color: var(--primary-hex, #ec4899) !important;
+}
+
+/* 3. Borders & Focus Rings */
+.border-orange-500,
+.border-orange-600,
+.border-\[\#ea580c\] {
+  border-color: var(--primary-hex, #ec4899) !important;
+}
+
+.focus\:border-orange-500:focus,
+.focus\:border-primary:focus,
+.focus\:ring-orange-500:focus,
+.focus\:ring-\[\#ea580c\]\/30:focus,
+.focus\:ring-orange-500\/20:focus {
+  border-color: var(--primary-hex, #ec4899) !important;
+  --tw-ring-color: var(--primary-hex, #ec4899) !important;
+}
+
+/* 4. Soft Badges & Highlights */
+.bg-orange-50,
+.bg-orange-100,
+.bg-\[\#ea580c\]\/10,
+.bg-\[\#ea580c\]\/15,
+.bg-\[\#ea580c\]\/20,
+.bg-\[\#fff7ed\],
+.dark .dark\:bg-orange-950\/40,
+.dark .dark\:bg-orange-950\/20,
+.dark .dark\:bg-orange-950\/50,
+.dark .dark\:bg-orange-950\/60 {
+  background-color: color-mix(in srgb, var(--primary-hex, #ec4899) 15%, transparent) !important;
+}
+
+.border-orange-200,
+.border-orange-200\/60,
+.border-orange-200\/80,
+.border-\[\#ea580c\]\/30,
+.border-\[\#ea580c\]\/40,
+.dark .dark\:border-orange-800,
+.dark .dark\:border-orange-800\/60,
+.dark .dark\:border-orange-800\/80 {
+  border-color: color-mix(in srgb, var(--primary-hex, #ec4899) 30%, transparent) !important;
+}
+
+/* 5. Soft Badges */
+.fsm-badge-soft,
+.dark .fsm-badge-soft {
+  background: color-mix(in srgb, var(--primary-hex, #ec4899) 16%, transparent) !important;
+  color: var(--primary-hex, #ec4899) !important;
+  border-color: color-mix(in srgb, var(--primary-hex, #ec4899) 32%, transparent) !important;
+}

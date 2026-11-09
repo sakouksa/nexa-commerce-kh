@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -50,7 +49,7 @@ class ApiCompatibilityTest extends TestCase
 
         $token = $response->json('access_token');
 
-        $meResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $meResponse = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/auth/me');
 
         $meResponse->assertStatus(200)
@@ -99,7 +98,7 @@ class ApiCompatibilityTest extends TestCase
 
         $shopId = $shopResponse->json('id');
 
-        $productsResponse = $this->getJson('/api/products/public?shop_id=' . $shopId);
+        $productsResponse = $this->getJson('/api/products/public?shop_id='.$shopId);
         $productsResponse->assertStatus(200);
         $products = $productsResponse->json();
         $this->assertIsArray($products);
@@ -107,7 +106,7 @@ class ApiCompatibilityTest extends TestCase
         $this->assertArrayHasKey('name', $products[0]);
         $this->assertArrayHasKey('price', $products[0]);
 
-        $categoriesResponse = $this->getJson('/api/categories/public?shop_id=' . $shopId);
+        $categoriesResponse = $this->getJson('/api/categories/public?shop_id='.$shopId);
         $categoriesResponse->assertStatus(200);
         $this->assertIsArray($categoriesResponse->json());
         $this->assertGreaterThanOrEqual(1, count($categoriesResponse->json()));
@@ -124,10 +123,10 @@ class ApiCompatibilityTest extends TestCase
     public function test_customer_signup_and_signin(): void
     {
         $shop = Shop::where('username', 'demo')->first();
-        $unique = time() . rand(100, 999);
-        $username = 'cust_' . $unique;
-        $email = 'testcust_' . $unique . '@example.com';
-        $phone = '012' . rand(100000, 999999);
+        $unique = time().rand(100, 999);
+        $username = 'cust_'.$unique;
+        $email = 'testcust_'.$unique.'@example.com';
+        $phone = '012'.rand(100000, 999999);
 
         $signup = $this->postJson('/api/customers/auth/signup', [
             'shop_id' => $shop->id,
@@ -164,14 +163,14 @@ class ApiCompatibilityTest extends TestCase
         $product = Product::where('shop_id', $shop->id)->first();
 
         // Sign up customer first to obtain a valid customer JWT
-        $unique = time() . rand(100, 999);
+        $unique = time().rand(100, 999);
         $signup = $this->postJson('/api/customers/auth/signup', [
             'shop_id' => $shop->id,
-            'username' => 'buyer_' . $unique,
+            'username' => 'buyer_'.$unique,
             'full_name' => 'John Buyer',
-            'email' => 'buyer_' . $unique . '@example.com',
+            'email' => 'buyer_'.$unique.'@example.com',
             'password' => 'buyer123',
-            'phone' => '099' . rand(100000, 999999),
+            'phone' => '099'.rand(100000, 999999),
         ]);
         $customerToken = $signup->json('access_token');
 
@@ -189,14 +188,14 @@ class ApiCompatibilityTest extends TestCase
                     'price' => $product->sale_price ?? $product->price,
                     'quantity' => 2,
                     'selected_attributes' => ['Size' => 'M'],
-                ]
+                ],
             ],
             'shipping_fee' => 1.50,
             'discount' => 0.0,
             'notes' => 'Please deliver in the afternoon',
         ];
 
-        $createResponse = $this->withHeader('Authorization', 'Bearer ' . $customerToken)
+        $createResponse = $this->withHeader('Authorization', 'Bearer '.$customerToken)
             ->postJson('/api/orders', $orderData);
 
         $createResponse->assertStatus(200)
@@ -211,7 +210,7 @@ class ApiCompatibilityTest extends TestCase
         $orderId = $createResponse->json('id');
 
         // Lookup by order number
-        $lookupResponse = $this->getJson('/api/orders/' . $orderNumber);
+        $lookupResponse = $this->getJson('/api/orders/'.$orderNumber);
         $lookupResponse->assertStatus(200)
             ->assertJson([
                 'order_number' => $orderNumber,
@@ -219,7 +218,7 @@ class ApiCompatibilityTest extends TestCase
             ]);
 
         // PDF receipt generation
-        $receiptResponse = $this->get('/api/orders/' . $orderId . '/receipt');
+        $receiptResponse = $this->get('/api/orders/'.$orderId.'/receipt');
         $receiptResponse->assertStatus(200);
         $this->assertEquals('application/pdf', $receiptResponse->headers->get('Content-Type'));
         $this->assertFileExists($receiptResponse->getFile()->getPathname());
@@ -235,8 +234,8 @@ class ApiCompatibilityTest extends TestCase
         $token = $loginResponse->json('access_token');
         $shopId = $loginResponse->json('user.shop_id');
 
-        $reportsResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->getJson('/api/reports/overview?shop_id=' . $shopId);
+        $reportsResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/reports/overview?shop_id='.$shopId);
 
         $reportsResponse->assertStatus(200)
             ->assertJsonStructure([
@@ -262,7 +261,7 @@ class ApiCompatibilityTest extends TestCase
         $shopId = $loginResponse->json('user.shop_id');
 
         // Create
-        $createCat = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $createCat = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/categories', [
                 'shop_id' => $shopId,
                 'name' => 'Footwear Test',
@@ -276,16 +275,16 @@ class ApiCompatibilityTest extends TestCase
         $catId = $createCat->json('id');
 
         // Update
-        $updateCat = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->putJson('/api/categories/' . $catId, [
+        $updateCat = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->putJson('/api/categories/'.$catId, [
                 'name' => 'Footwear & Shoes',
             ]);
         $updateCat->assertStatus(200)
             ->assertJson(['name' => 'Footwear & Shoes']);
 
         // Delete
-        $deleteCat = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->deleteJson('/api/categories/' . $catId);
+        $deleteCat = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->deleteJson('/api/categories/'.$catId);
         $deleteCat->assertStatus(200)
             ->assertJson(['ok' => true]);
     }
@@ -301,8 +300,8 @@ class ApiCompatibilityTest extends TestCase
         $product = Product::where('shop_id', $shop->id)->first();
         $initialQty = $product->quantity;
 
-        $stockResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->postJson('/api/products/' . $product->id . '/stock', [
+        $stockResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/products/'.$product->id.'/stock', [
                 'quantity' => $initialQty + 10,
                 'reason' => 'Restock shipment arrived',
             ]);
@@ -324,7 +323,7 @@ class ApiCompatibilityTest extends TestCase
         $shop = Shop::where('username', 'demo')->first();
         $product = Product::where('shop_id', $shop->id)->first();
 
-        $posResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $posResponse = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/orders/pos', [
                 'shop_id' => $shop->id,
                 'payment_method' => 'cash',
@@ -335,7 +334,7 @@ class ApiCompatibilityTest extends TestCase
                         'name' => $product->name,
                         'price' => 15.00,
                         'quantity' => 1,
-                    ]
+                    ],
                 ],
                 'discount' => 2.00,
                 'notes' => 'Cash received',
@@ -364,14 +363,14 @@ class ApiCompatibilityTest extends TestCase
         $adminToken = $loginResponse->json('access_token');
 
         // Update platform setting
-        $saveSetting = $this->withHeader('Authorization', 'Bearer ' . $adminToken)
+        $saveSetting = $this->withHeader('Authorization', 'Bearer '.$adminToken)
             ->postJson('/api/settings', [
                 'key' => 'site_name',
                 'value' => 'Mini Shop Cambodia',
             ]);
         $saveSetting->assertStatus(200);
 
-        $settingsResponse = $this->withHeader('Authorization', 'Bearer ' . $adminToken)
+        $settingsResponse = $this->withHeader('Authorization', 'Bearer '.$adminToken)
             ->getJson('/api/settings/platform');
         $settingsResponse->assertStatus(200)
             ->assertJson([

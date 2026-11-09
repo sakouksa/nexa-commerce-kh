@@ -5,9 +5,10 @@ help:
 	@echo " Nexa Commerce KH (nexa-commerce-kh) Development Commands"
 	@echo "=========================================================="
 	@echo "  Backend:"
-	@echo "    make dev-api          - Run Laravel 13 Core API (backend/nckhcoreapi :8000)"
-	@echo "    make dev-bot          - Run Telegram Bot Worker (backend/nckhtelegrambot)"
-	@echo "    make test-api         - Run Laravel test suite"
+	@echo "    make dev-api          - Run Laravel 13 Core API (backend/nckhcoreapi :8003)"
+	@echo "    make dev-bot          - Run Laravel Telegram Bot Worker (backend/nckhtelegrambot)"
+	@echo "    make test-api         - Run Core API test suite"
+	@echo "    make test-bot         - Run Telegram Bot test suite"
 	@echo ""
 	@echo "  Web Clients:"
 	@echo "    make dev-storefront   - Customer Storefront (webclient/nckhcustomerstorefront :3000)"
@@ -26,13 +27,16 @@ help:
 	@echo "=========================================================="
 
 dev-api:
-	cd backend/nckhcoreapi && php artisan serve --port=8000
+	cd backend/nckhcoreapi && php artisan serve --port=8003
 
 dev-bot:
-	cd backend/nckhtelegrambot && python bot_worker.py
+	cd backend/nckhtelegrambot && php artisan telegram:bot:run
 
 test-api:
 	cd backend/nckhcoreapi && php artisan test
+
+test-bot:
+	cd backend/nckhtelegrambot && php artisan test
 
 dev-storefront:
 	cd webclient/nckhcustomerstorefront && npm start

@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'Business Report',
+    'today' => 'Today',
+    'past_days' => 'Past :count days',
+    'total_revenue' => 'Total Revenue',
+    'orders' => 'Orders',
+    'profit_est' => 'Profit (Est.)',
+    'margin' => 'Margin',
+    'aov' => 'AOV',
+    'vs_prev_period' => 'vs prev period',
+    'payment_breakdown' => 'Payment Breakdown',
+    'top_selling_products' => 'Top Selling Products (Top 3)',
+    'stock_health' => 'Stock Health',
+    'stock_health_summary' => 'Normal · ⚠️ Low: :low · ❌ Out of stock: :out (Total :total)',
+    'top_vip_customers' => 'Top VIP Customers (Top 3)',
+    'cancelled_orders' => 'Cancelled Orders',
+    'units_unit' => 'units',
+    'orders_unit' => 'orders',
+    'no_data' => 'No data',
+    'walk_in_customer' => 'Customer',
+    'sent_success' => 'Business report successfully sent to shop Telegram Bot!',
+    'bot_error' => 'Could not send report to Telegram. Check bot token and ensure Telegram Bot is active and chat linked.',
+    'branding' => 'MiniStore KH · Business Intelligence',
+];

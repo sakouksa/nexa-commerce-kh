@@ -4,12 +4,12 @@ namespace App\Actions\Orders;
 
 use App\Events\OrderCreated;
 use App\Helpers\ShopHelper;
-use App\Http\Controllers\OrderController;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\OrderService;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -19,7 +19,7 @@ class CreateOrderAction
     {
         $shopId = (int) ($data['shop_id'] ?? 0);
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active') {
+        if (! $shop || $shop->status !== 'active') {
             throw new HttpException(404, 'Shop not found or unavailable');
         }
 
@@ -36,16 +36,17 @@ class CreateOrderAction
             $customerTelegram = $data['customer_telegram'] ?? ($customer->telegram ?: "tg{$customer->telegram_id}");
             $shippingFee = (float) ($data['shipping_fee'] ?? 0);
             $discount = (float) ($data['discount'] ?? 0);
+            $customerAddress = $data['customer_address'] ?? ($data['delivery_address'] ?? '');
 
             $order = Order::create([
                 'shop_id' => $shopId,
                 'customer_id' => $customer->id,
-                'order_number' => OrderController::generateOrderNumber($shopId),
+                'order_number' => app(OrderService::class)->generateOrderNumber($shopId),
                 'customer_name' => $data['customer_name'] ?? $customer->name,
                 'customer_email' => $data['customer_email'] ?? '',
                 'customer_phone' => $data['customer_phone'] ?? $customer->phone,
                 'customer_telegram' => $customerTelegram,
-                'customer_address' => $data['customer_address'] ?? '',
+                'customer_address' => $customerAddress,
                 'customer_city' => $data['customer_city'] ?? '',
                 'customer_country' => $data['customer_country'] ?? '',
                 'customer_note' => $data['customer_note'] ?? ($data['notes'] ?? ''),
@@ -59,21 +60,41 @@ class CreateOrderAction
 
             $itemsTotal = 0.0;
             foreach ($items as $item) {
-                $product = Product::find($item['product_id'] ?? null);
+                $productId = $item['product_id'] ?? null;
+                $product = $productId ? Product::find($productId) : null;
+                if ($product && (int) $product->shop_id !== (int) $shopId) {
+                    throw new HttpException(400, "Product #{$product->id} does not belong to this shop");
+                }
+
                 $unitPrice = (float) ($item['price'] ?? 0);
                 if ($product) {
                     $unitPrice = $product->sale_price !== null ? (float) $product->sale_price : (float) $product->price;
                 }
                 $qty = (int) ($item['quantity'] ?? 1);
+
+                if ($product) {
+                    $avail = (int) ($product->quantity ?? 0);
+                    if ($qty > $avail) {
+                        throw new HttpException(400, "ទំនិញ '{$product->name}' ក្នុងស្តុកនៅសល់តែ {$avail} ប៉ុណ្ណោះ មិនគ្រប់សម្រាប់ការទិញឡើយ (Insufficient stock: only {$avail} available)");
+                    }
+                }
+
                 $itemsTotal += $unitPrice * $qty;
+
+                $variationPayload = $item['variations'] ?? ($item['selected_attributes'] ?? null);
+                $variationJson = is_array($variationPayload)
+                    ? json_encode($variationPayload, JSON_UNESCAPED_UNICODE)
+                    : (is_string($variationPayload) ? $variationPayload : '{}');
+
+                $productName = $item['product_name'] ?? ($item['name'] ?? ($product ? $product->name : 'Product'));
 
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $item['product_id'] ?? null,
-                    'product_name' => $item['name'] ?? ($product ? $product->name : 'Product'),
+                    'product_id' => $productId,
+                    'product_name' => $productName,
                     'price' => $unitPrice,
                     'quantity' => $qty,
-                    'variations' => isset($item['variations']) ? json_encode($item['variations'], JSON_UNESCAPED_UNICODE) : '{}',
+                    'variations' => $variationJson,
                 ]);
             }
 
@@ -82,18 +103,28 @@ class CreateOrderAction
             $order->save();
 
             // Update customer record
-            if (!empty($data['customer_phone'])) $customer->phone = $data['customer_phone'];
-            if (!empty($data['customer_address'])) $customer->address = $data['customer_address'];
-            if (!empty($data['customer_city'])) $customer->city = $data['customer_city'];
-            if (!empty($data['customer_country'])) $customer->country = $data['customer_country'];
-            if (!empty($data['customer_email'])) $customer->email = $data['customer_email'];
+            if (! empty($data['customer_phone'])) {
+                $customer->phone = $data['customer_phone'];
+            }
+            if (! empty($data['customer_address'])) {
+                $customer->address = $data['customer_address'];
+            }
+            if (! empty($data['customer_city'])) {
+                $customer->city = $data['customer_city'];
+            }
+            if (! empty($data['customer_country'])) {
+                $customer->country = $data['customer_country'];
+            }
+            if (! empty($data['customer_email'])) {
+                $customer->email = $data['customer_email'];
+            }
             $customer->save();
 
             ShopHelper::logActivity('create_order', "New order #{$order->order_number} ({$order->total} {$order->currency})", $shopId);
 
             event(new OrderCreated($order));
 
-            return $order->load('items');
+            return $order->load(['items', 'shop']);
         });
     }
 }

@@ -1,0 +1,23 @@
+{
+  "menu": "Menu",
+  "dashboard": "Dashboard",
+  "shops": "Shops",
+  "users": "Users",
+  "resellers": "Resellers",
+  "backup": "Backup",
+  "activity": "Activity Logs",
+  "settings": "Settings",
+  "platformManagement": "Platform Management",
+  "administrator": "Administrator",
+  "groupOverview": "Overview",
+  "groupManagement": "Management",
+  "groupSystem": "System & Tools",
+  "searchPlaceholder": "Search or jump to... (⌘K)",
+  "notifications": "Notifications",
+  "profile": "Profile",
+  "logout": "Sign Out",
+  "collapseSidebar": "Collapse sidebar",
+  "expandSidebar": "Expand sidebar",
+  "pinSidebar": "Pin sidebar",
+  "unpinSidebar": "Unpin sidebar"
+}

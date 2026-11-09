@@ -2,111 +2,67 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Orders\CreateOrderAction;
+use App\Actions\Orders\ProcessPosOrderAction;
+use App\Actions\Orders\UpdateOrderStatusAction;
 use App\Helpers\ShopHelper;
-use App\Models\Customer;
+use App\Http\Requests\Orders\PosOrderRequest;
+use App\Http\Requests\Orders\StoreOrderRequest;
+use App\Http\Requests\Orders\UpdateOrderStatusRequest;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
-use App\Models\Shop;
+use App\Services\OrderService;
 use App\Services\PdfReceiptService;
-use App\Services\StockService;
-use App\Services\TelegramService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends Controller
 {
     public static function generateOrderNumber(int $shopId): string
     {
-        return 'ORD' . $shopId . '-' . time() . '-' . random_int(100, 999);
+        return app(OrderService::class)->generateOrderNumber($shopId);
     }
 
     public static function markPaid(Order $order, ?string $transactionId = null): bool
     {
-        if ($order->payment_status === 'paid') {
-            return false;
-        }
-
-        $tx = $transactionId ?: $order->transaction_id;
-        $affected = DB::table('orders')
-            ->where('id', $order->id)
-            ->where('payment_status', '!=', 'paid')
-            ->update([
-                'payment_status' => 'paid',
-                'paid_at' => now(),
-                'transaction_id' => $tx,
-                'updated_at' => now(),
-            ]);
-
-        if ($affected === 0) {
-            $order->refresh();
-            return false;
-        }
-
-        $order->refresh();
-        $stockSummary = StockService::deductStockForOrder($order);
-        self::processFirstPayment($order, $stockSummary);
-
-        return true;
+        return app(OrderService::class)->markPaid($order, $transactionId);
     }
 
     public static function processFirstPayment(Order $order, ?array $stockSummary = null): void
     {
-        $shop = $order->shop;
-        if (!$shop) return;
-
-        try {
-            $items = $order->items->map(fn($i) => $i->to_dict())->toArray();
-            $order->receipt_url = PdfReceiptService::generateReceipt($order, $shop, $items);
-            $order->save();
-        } catch (\Exception $e) {
-            // receipt generation fallback
-        }
-
-        $tg = $shop->telegram_dict();
-        if (!empty($tg['enabled'])) {
-            TelegramService::notifyShopPaymentSuccessFull($shop, $order, $stockSummary);
-        }
-
-        try {
-            StockService::sendLowStockAlerts($shop);
-        } catch (\Exception $e) {
-            //
-        }
-
-        ShopHelper::logActivity('payment_success', "Payment confirmed for #{$order->order_number} ({$order->total} {$order->currency})", $order->shop_id);
+        app(OrderService::class)->processFirstPayment($order, $stockSummary);
     }
 
-    public function store(\App\Http\Requests\Orders\StoreOrderRequest $request, \App\Actions\Orders\CreateOrderAction $action)
+    public function store(StoreOrderRequest $request, CreateOrderAction $action)
     {
         $customer = $request->attributes->get('customer');
-        if (!$customer) {
+        if (! $customer) {
             throw new HttpException(401, 'Please login with Telegram to continue');
         }
 
         $order = $action->execute($request->validated(), $customer);
-        return response()->json((new \App\Http\Resources\OrderResource($order))->resolve());
+
+        return response()->json((new OrderResource($order))->resolve());
     }
 
-    public function pos(\App\Http\Requests\Orders\PosOrderRequest $request, \App\Actions\Orders\ProcessPosOrderAction $action)
+    public function pos(PosOrderRequest $request, ProcessPosOrderAction $action)
     {
         $order = $action->execute($request->validated(), $request->user());
-        return response()->json((new \App\Http\Resources\OrderResource($order))->resolve());
+
+        return response()->json((new OrderResource($order))->resolve());
     }
 
     public function index(Request $request)
     {
         $user = $request->user();
         $shopId = (int) $request->input('shop_id');
-        if (!$shopId) {
+        if (! $shopId) {
             throw new HttpException(400, 'shop_id is required');
         }
 
         ShopHelper::requireShopAccess($shopId, $user);
 
-        $query = Order::with('items')->where('shop_id', $shopId);
+        $query = Order::with(['items', 'shop'])->where('shop_id', $shopId);
 
         if ($request->has('status') && $request->input('status')) {
             $query->where('order_status', $request->input('status'));
@@ -122,25 +78,39 @@ class OrderController extends Controller
         }
         if ($request->has('search') && trim($request->input('search'))) {
             $s = trim($request->input('search'));
-            $query->where(function($q) use ($s) {
+            $query->where(function ($q) use ($s) {
                 $q->where('order_number', 'like', "%{$s}%")
-                  ->orWhere('customer_name', 'like', "%{$s}%")
-                  ->orWhere('customer_phone', 'like', "%{$s}%");
+                    ->orWhere('customer_name', 'like', "%{$s}%")
+                    ->orWhere('customer_phone', 'like', "%{$s}%");
             });
         }
 
         $orders = $query->orderBy('id', 'desc')->get();
-        return response()->json($orders->map(fn($o) => $o->to_dict())->toArray());
+
+        return response()->json($orders->map(fn ($o) => $o->to_dict())->toArray());
     }
 
     public function show(Request $request, string $idOrNumber)
     {
         $order = is_numeric($idOrNumber)
-            ? Order::with('items')->find((int) $idOrNumber)
-            : Order::with('items')->where('order_number', $idOrNumber)->first();
+            ? Order::with(['items', 'shop'])->find((int) $idOrNumber)
+            : Order::with(['items', 'shop'])->where('order_number', $idOrNumber)->first();
 
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
+        }
+
+        $user = $request->user();
+        $customer = $request->attributes->get('customer');
+
+        if ($user) {
+            ShopHelper::requireShopAccess($order->shop_id, $user);
+        } elseif ($customer) {
+            if ((int) $order->customer_id !== (int) $customer->id || (int) $order->shop_id !== (int) $customer->shop_id) {
+                throw new HttpException(403, 'Unauthorized access to this order');
+            }
+        } else {
+            throw new HttpException(401, 'Authentication required');
         }
 
         return response()->json($order->to_dict());
@@ -150,28 +120,31 @@ class OrderController extends Controller
     {
         $user = $request->user();
         $order = is_numeric($idOrNumber)
-            ? Order::with('items')->find((int) $idOrNumber)
-            : Order::with('items')->where('order_number', $idOrNumber)->first();
+            ? Order::with(['items', 'shop'])->find((int) $idOrNumber)
+            : Order::with(['items', 'shop'])->where('order_number', $idOrNumber)->first();
 
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
         ShopHelper::requireShopAccess($order->shop_id, $user);
 
-        if ($request->has('order_status')) {
-            $order->order_status = $request->input('order_status');
-        }
         if ($request->has('payment_status')) {
             $newPay = $request->input('payment_status');
             if ($newPay === 'paid' && $order->payment_status !== 'paid') {
                 self::markPaid($order);
+                $order->refresh();
             } else {
                 $order->payment_status = $newPay;
             }
         }
 
+        if ($request->has('order_status')) {
+            $order->order_status = $request->input('order_status');
+        }
+
         $order->save();
+        $order->load(['items', 'shop']);
         ShopHelper::logActivity('update_order', "Order #{$order->order_number} status updated to {$order->order_status}/{$order->payment_status}", $order->shop_id, $user);
 
         return response()->json($order->to_dict());
@@ -184,7 +157,7 @@ class OrderController extends Controller
             ? Order::find((int) $idOrNumber)
             : Order::where('order_number', $idOrNumber)->first();
 
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
@@ -198,15 +171,19 @@ class OrderController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function receipt(int $orderId)
+    public function receipt(Request $request, int $orderId)
     {
-        $order = Order::with('items')->find($orderId);
-        if (!$order) {
+        $order = Order::with(['items', 'shop'])->find($orderId);
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
+        if (! $order->shop) {
+            throw new HttpException(404, 'Shop not found for this order');
+        }
 
-        $items = $order->items->map(fn($i) => $i->to_dict())->toArray();
-        $receiptPath = PdfReceiptService::generateReceipt($order, $order->shop, $items);
+        $items = $order->items->map(fn ($i) => $i->to_dict())->toArray();
+        $lang = $request->query('lang');
+        $receiptPath = PdfReceiptService::generateReceipt($order, $order->shop, $items, $lang);
         $fullPath = public_path(ltrim($receiptPath, '/'));
 
         return response()->file($fullPath, [
@@ -219,12 +196,12 @@ class OrderController extends Controller
     public function trackOrder(Request $request)
     {
         $orderNumber = $request->query('order_number');
-        if (!$orderNumber) {
+        if (! $orderNumber) {
             throw new HttpException(400, 'order_number is required');
         }
 
-        $order = Order::with('items')->where('order_number', $orderNumber)->first();
-        if (!$order) {
+        $order = Order::with(['items', 'shop'])->where('order_number', $orderNumber)->first();
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
@@ -234,6 +211,10 @@ class OrderController extends Controller
     public function customerOrderHistory(Request $request)
     {
         $shopId = (int) $request->input('shop_id');
+        if (! $shopId) {
+            throw new HttpException(400, 'shop_id is required');
+        }
+
         $phone = trim((string) $request->input('phone', ''));
         $telegram = trim((string) $request->input('telegram', ''));
 
@@ -241,13 +222,13 @@ class OrderController extends Controller
             throw new HttpException(400, 'Please provide your phone number or Telegram username');
         }
 
-        $q = Order::with('items')->where('shop_id', $shopId);
-        if (!empty($phone) && !empty($telegram)) {
+        $q = Order::with(['items', 'shop'])->where('shop_id', $shopId);
+        if (! empty($phone) && ! empty($telegram)) {
             $q->where(function ($sub) use ($phone, $telegram) {
                 $sub->where('customer_phone', $phone)
                     ->orWhere('customer_telegram', $telegram);
             });
-        } elseif (!empty($phone)) {
+        } elseif (! empty($phone)) {
             $q->where('customer_phone', $phone);
         } else {
             $q->where('customer_telegram', $telegram);
@@ -262,7 +243,7 @@ class OrderController extends Controller
                 'telegram' => $telegram,
             ],
             'count' => $orders->count(),
-            'orders' => $orders->map(fn($o) => $o->to_dict())->toArray(),
+            'orders' => $orders->map(fn ($o) => $o->to_dict())->toArray(),
         ]);
     }
 
@@ -273,23 +254,25 @@ class OrderController extends Controller
             throw new HttpException(403, 'Admin privileges required');
         }
 
-        $orders = Order::with('items')->orderBy('id', 'desc')->limit(500)->get();
-        return response()->json($orders->map(fn($o) => $o->to_dict())->toArray());
+        $orders = Order::with(['items', 'shop'])->orderBy('id', 'desc')->limit(500)->get();
+
+        return response()->json($orders->map(fn ($o) => $o->to_dict())->toArray());
     }
 
-    public function updateStatus(\App\Http\Requests\Orders\UpdateOrderStatusRequest $request, string $idOrNumber, \App\Actions\Orders\UpdateOrderStatusAction $action)
+    public function updateStatus(UpdateOrderStatusRequest $request, string $idOrNumber, UpdateOrderStatusAction $action)
     {
         $user = $request->user();
         $order = is_numeric($idOrNumber)
-            ? Order::with('items')->find((int) $idOrNumber)
-            : Order::with('items')->where('order_number', $idOrNumber)->first();
+            ? Order::with(['items', 'shop'])->find((int) $idOrNumber)
+            : Order::with(['items', 'shop'])->where('order_number', $idOrNumber)->first();
 
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
         $order = $action->execute($order->id, $request->validated(), $user);
-        return response()->json((new \App\Http\Resources\OrderResource($order))->resolve());
+        $order->load(['items', 'shop']);
+
+        return response()->json((new OrderResource($order))->resolve());
     }
 }
-

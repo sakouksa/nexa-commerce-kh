@@ -1,0 +1,23 @@
+{
+  "menu": "មឺនុយ",
+  "dashboard": "ផ្ទាំងគ្រប់គ្រង",
+  "shops": "ហាងទាំងអស់",
+  "users": "អ្នកប្រើប្រាស់",
+  "resellers": "តំណាងចែកចាយ",
+  "backup": "ទិន្នន័យបម្រុង",
+  "activity": "កំណត់ហេតុសកម្មភាព",
+  "settings": "ការកំណត់",
+  "platformManagement": "ការគ្រប់គ្រងប្រព័ន្ធ",
+  "administrator": "អ្នកគ្រប់គ្រង",
+  "groupOverview": "ទិដ្ឋភាពទូទៅ",
+  "groupManagement": "ការគ្រប់គ្រង",
+  "groupSystem": "ប្រព័ន្ធ & ឧបករណ៍",
+  "searchPlaceholder": "ស្វែងរក ឬផ្លាស់ទី... (⌘K)",
+  "notifications": "ការជូនដំណឹង",
+  "profile": "គណនី",
+  "logout": "ចាកចេញ",
+  "collapseSidebar": "បង្រួមរបារចំហៀង",
+  "expandSidebar": "ពង្រីករបារចំហៀង",
+  "pinSidebar": "ខ្ទាស់របារចំហៀង",
+  "unpinSidebar": "ដោះខ្ទាស់របារចំហៀង"
+}

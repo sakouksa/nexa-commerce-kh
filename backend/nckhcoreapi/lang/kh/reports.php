@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'title' => 'របាយការណ៍អាជីវកម្ម',
+    'today' => 'ថ្ងៃនេះ',
+    'past_days' => ':count ថ្ងៃចុងក្រោយ',
+    'total_revenue' => 'ចំណូលសរុប',
+    'orders' => 'វិក្កយបត្រ',
+    'profit_est' => 'ចំណេញ (Est.)',
+    'margin' => 'Margin',
+    'aov' => 'AOV',
+    'vs_prev_period' => 'ធៀបវគ្គមុន',
+    'payment_breakdown' => 'ការទូទាត់',
+    'top_selling_products' => 'ទំនិញលក់ដាច់បំផុត (Top 3)',
+    'stock_health' => 'ស្ថានភាពស្តុក',
+    'stock_health_summary' => 'ធម្មតា · ⚠️ ជិតអស់: :low មុខ · ❌ អស់ស្តុក: :out មុខ (សរុប :total)',
+    'top_vip_customers' => 'អតិថិជន VIP (Top 3)',
+    'cancelled_orders' => 'វិក្កយបត្រលុបចោល',
+    'units_unit' => 'ឯកតា',
+    'orders_unit' => 'វិក្កយបត្រ',
+    'no_data' => 'មិនមានទិន្នន័យ',
+    'walk_in_customer' => 'អតិថិជនទូទៅ',
+    'sent_success' => 'បានផ្ញើរបាយការណ៍ទៅ Telegram Bot ដោយជោគជ័យ!',
+    'bot_error' => 'មិនអាចផ្ញើរបាយការណ៍ទៅកាន់ Telegram បានទេ។ សូមពិនិត្យមើល Bot Token និងត្រូវប្រាកដថាបាន Start Bot ឬភ្ជាប់ Chat ID រួចរាល់។',
+    'branding' => 'MiniStore KH · Business Intelligence',
+];

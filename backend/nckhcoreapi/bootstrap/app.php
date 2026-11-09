@@ -1,11 +1,15 @@
 <?php
 
+use App\Exceptions\ApiExceptionHandler;
+use App\Http\Middleware\AdminOnly;
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\CustomerOnly;
+use App\Http\Middleware\JwtAuthMiddleware;
+use App\Http\Middleware\ShopUserOnly;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,11 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(AssignRequestId::class);
+
         $middleware->alias([
-            'jwt.auth' => \App\Http\Middleware\JwtAuthMiddleware::class,
-            'role.admin' => \App\Http\Middleware\AdminOnly::class,
-            'role.shop' => \App\Http\Middleware\ShopUserOnly::class,
-            'role.customer' => \App\Http\Middleware\CustomerOnly::class,
+            'jwt.auth' => JwtAuthMiddleware::class,
+            'role.admin' => AdminOnly::class,
+            'role.shop' => ShopUserOnly::class,
+            'role.customer' => CustomerOnly::class,
+            'auth.jwt' => \App\Http\Middleware\Authenticate::class,
+            'shop.access' => \App\Http\Middleware\EnsureShopAccess::class,
+            'role' => \App\Http\Middleware\EnsureRole::class,
+            'shop.resolve' => \App\Http\Middleware\ResolveShop::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -27,20 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        $exceptions->render(function (ValidationException $e, Request $request) {
-            if ($request->is('api/*')) {
-                $messages = $e->validator->errors()->all();
-                return response()->json([
-                    'detail' => implode('; ', $messages),
-                ], 422);
-            }
-        });
-
-        $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'detail' => $e->getMessage() ?: 'An error occurred',
-                ], $e->getStatusCode());
-            }
+        $exceptions->render(function (Throwable $e, Request $request) {
+            return ApiExceptionHandler::render($e, $request);
         });
     })->create();

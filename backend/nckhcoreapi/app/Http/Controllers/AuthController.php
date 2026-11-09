@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ShopHelper;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Customer;
 use App\Models\Shop;
 use App\Models\TelegramCode;
@@ -18,6 +19,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class AuthController extends Controller
 {
     const MAX_FAILED_ATTEMPTS = 3;
+
     const BASE_LOCK_MINUTES = 5;
 
     protected JwtService $jwtService;
@@ -31,8 +33,13 @@ class AuthController extends Controller
     {
         $m = intdiv($waitSeconds, 60);
         $s = $waitSeconds % 60;
-        if ($m && $s) return "{$m} min {$s} sec";
-        if ($m) return "{$m} min";
+        if ($m && $s) {
+            return "{$m} min {$s} sec";
+        }
+        if ($m) {
+            return "{$m} min";
+        }
+
         return "{$s} sec";
     }
 
@@ -43,12 +50,13 @@ class AuthController extends Controller
             ->orWhere('email', $username)
             ->first();
 
-        if (!$user) {
-            $key = 'login_unknown_' . strtolower(trim($username));
+        if (! $user) {
+            $key = 'login_unknown_'.strtolower(trim($username));
             $ent = Cache::get($key, ['count' => 0, 'locked_until' => 0, 'level' => 0]);
             if ($ent['locked_until'] && time() < $ent['locked_until']) {
                 $wait = $ent['locked_until'] - time();
-                throw new HttpException(429, "Too many failed attempts. Account is locked — try again in " . $this->formatLockWait($wait) . ".");
+                ShopHelper::logActivity('login_blocked', "Blocked login attempt on locked unknown account '{$username}'", null, null, 'failed', ['attempted_username' => $username]);
+                throw new HttpException(429, 'Too many failed attempts. Account is locked — try again in '.$this->formatLockWait($wait).'.');
             }
             $ent['count']++;
             if ($ent['count'] >= self::MAX_FAILED_ATTEMPTS) {
@@ -57,18 +65,21 @@ class AuthController extends Controller
                 $ent['locked_until'] = time() + ($minutes * 60);
                 $ent['count'] = 0;
                 Cache::put($key, $ent, $minutes * 60);
+                ShopHelper::logActivity('account_locked', "Unknown account '{$username}' locked for {$minutes} min after multiple failed attempts", null, null, 'failed', ['attempted_username' => $username, 'level' => $ent['level']]);
                 throw new HttpException(429, "Too many failed attempts. Account locked for {$minutes} minutes — try again later.");
             }
             Cache::put($key, $ent, 3600);
             $remaining = self::MAX_FAILED_ATTEMPTS - $ent['count'];
             $nextLock = self::BASE_LOCK_MINUTES * ($ent['level'] + 1);
+            ShopHelper::logActivity('failed_login', "Failed login attempt for non-existent user '{$username}' ({$remaining} attempts left)", null, null, 'failed', ['attempted_username' => $username, 'remaining' => $remaining]);
             throw new HttpException(401, "Invalid username or password — {$remaining} attempt(s) left, then your account is locked for {$nextLock} minutes.");
         }
 
         // Check if locked
         if ($user->login_locked_until && $user->login_locked_until->isFuture()) {
             $wait = $user->login_locked_until->diffInSeconds($now);
-            throw new HttpException(429, "Too many failed attempts. Account is locked — try again in " . $this->formatLockWait($wait) . ".");
+            ShopHelper::logActivity('login_blocked', "Blocked login attempt for locked account {$user->username}", $user->shop_id, $user, 'failed', ['locked_until' => $user->login_locked_until->toIso8601String()]);
+            throw new HttpException(429, 'Too many failed attempts. Account is locked — try again in '.$this->formatLockWait($wait).'.');
         }
 
         if ($user->login_locked_until && $user->login_locked_until->isPast()) {
@@ -77,7 +88,7 @@ class AuthController extends Controller
             $user->save();
         }
 
-        if (!Hash::check($password, $user->password)) {
+        if (! Hash::check($password, $user->password)) {
             $user->login_failed_count = ($user->login_failed_count ?? 0) + 1;
             if ($user->login_failed_count >= self::MAX_FAILED_ATTEMPTS) {
                 $user->login_locked_count = ($user->login_locked_count ?? 0) + 1;
@@ -85,11 +96,13 @@ class AuthController extends Controller
                 $user->login_locked_until = $now->copy()->addMinutes($minutes);
                 $user->login_failed_count = 0;
                 $user->save();
+                ShopHelper::logActivity('account_locked', "Account locked for {$user->username} for {$minutes} min after failed password attempts", $user->shop_id, $user, 'failed', ['locked_minutes' => $minutes]);
                 throw new HttpException(429, "Too many failed attempts. Account locked for {$minutes} minutes — try again later.");
             }
             $remaining = self::MAX_FAILED_ATTEMPTS - $user->login_failed_count;
             $nextMinutes = self::BASE_LOCK_MINUTES * (($user->login_locked_count ?? 0) + 1);
             $user->save();
+            ShopHelper::logActivity('failed_login', "Incorrect password attempt for user '{$user->username}' ({$remaining} attempts left)", $user->shop_id, $user, 'failed', ['remaining' => $remaining]);
             throw new HttpException(401, "Invalid username or password — {$remaining} attempt(s) left, then your account is locked for {$nextMinutes} minutes.");
         }
 
@@ -101,13 +114,14 @@ class AuthController extends Controller
         return $user;
     }
 
-    public function login(\App\Http\Requests\Auth\LoginRequest $request)
+    public function login(LoginRequest $request)
     {
         $username = trim($request->input('username', ''));
         $password = $request->input('password', '');
 
         $user = $this->attemptLogin($username, $password);
         if ($user->status !== 'active') {
+            ShopHelper::logActivity('account_suspended', "Suspended user {$user->username} attempted login", $user->shop_id, $user, 'failed', ['status' => $user->status]);
             throw new HttpException(403, 'Account is suspended. Contact admin via Telegram @your_telegram');
         }
 
@@ -116,7 +130,14 @@ class AuthController extends Controller
             'role' => $user->role,
         ]);
 
-        ShopHelper::logActivity('login', "{$user->username} logged in", $user->shop_id, $user);
+        ShopHelper::logActivity(
+            'login',
+            "{$user->username} logged in successfully",
+            $user->shop_id,
+            $user,
+            'success',
+            ['role' => $user->role, 'email' => $user->email ?? '']
+        );
 
         return response()->json([
             'access_token' => $token,
@@ -164,7 +185,7 @@ class AuthController extends Controller
         $shopUsername = trim($request->input('shop_username', ''));
         $shopName = trim($request->input('shop_name', ''));
 
-        if (!$username || !$password) {
+        if (! $username || ! $password) {
             throw new HttpException(400, 'Username and password are required');
         }
         if (User::where('username', $username)->exists()) {
@@ -173,7 +194,7 @@ class AuthController extends Controller
 
         if ($shopUsername || $shopName) {
             $shop = Shop::where('username', $shopUsername)->first();
-            if (!$shop && $shopUsername) {
+            if (! $shop && $shopUsername) {
                 $shop = Shop::create([
                     'username' => $shopUsername,
                     'shop_name' => $shopName ?: $shopUsername,
@@ -219,7 +240,8 @@ class AuthController extends Controller
         $currentPassword = $request->input('current_password', '');
         $newPassword = $request->input('new_password', '');
 
-        if (!Hash::check($currentPassword, $user->password)) {
+        if (! Hash::check($currentPassword, $user->password)) {
+            ShopHelper::logActivity('change_password_failed', "{$user->username} attempted password change with incorrect current password", $user->shop_id, $user, 'failed');
             throw new HttpException(400, 'Current password is incorrect');
         }
         if (strlen($newPassword) < 4) {
@@ -229,12 +251,15 @@ class AuthController extends Controller
         $user->password = Hash::make($newPassword);
         $user->save();
 
+        ShopHelper::logActivity('change_password', "{$user->username} changed password successfully", $user->shop_id, $user, 'success');
+
         return response()->json(['ok' => true, 'detail' => 'Password updated']);
     }
 
     public function me(Request $request)
     {
         $user = $request->user();
+
         return response()->json([
             'id' => $user->id,
             'username' => $user->username,
@@ -248,21 +273,36 @@ class AuthController extends Controller
     public function listUsers(Request $request)
     {
         $users = User::with('shop')->orderBy('id')->get();
-        return response()->json($users->map(fn($u) => $u->to_dict())->toArray());
+
+        return response()->json($users->map(fn ($u) => $u->to_dict())->toArray());
     }
 
     public function updateUser(Request $request, int $userId)
     {
         $admin = $request->user();
+        if ($userId === (int) $admin->id) {
+            throw new HttpException(400, 'You cannot delete your own account');
+        }
         $user = User::find($userId);
-        if (!$user) {
+        if (! $user) {
             throw new HttpException(404, 'User not found');
         }
 
-        if ($request->has('email')) $user->email = $request->input('email');
-        if ($request->has('role')) $user->role = $request->input('role');
-        if ($request->has('shop_id')) $user->shop_id = $request->input('shop_id');
-        if ($request->has('status')) $user->status = $request->input('status');
+        if ($request->has('email')) {
+            $user->email = $request->input('email');
+        }
+        if ($request->has('role')) {
+            $user->role = $request->input('role');
+        }
+        if ($request->has('shop_id')) {
+            $user->shop_id = $request->input('shop_id');
+        }
+        if ($request->has('status')) {
+            if ($user->id === $admin->id && $request->input('status') === 'suspended') {
+                throw new HttpException(400, 'You cannot suspend your own account');
+            }
+            $user->status = $request->input('status');
+        }
         if ($request->filled('password')) {
             $user->password = Hash::make($request->input('password'));
         }
@@ -276,8 +316,11 @@ class AuthController extends Controller
     public function deleteUser(Request $request, int $userId)
     {
         $admin = $request->user();
+        if ($userId === (int) $admin->id) {
+            throw new HttpException(400, 'You cannot delete your own account');
+        }
         $user = User::find($userId);
-        if (!$user) {
+        if (! $user) {
             throw new HttpException(404, 'User not found');
         }
         if ($user->role === 'admin' && $user->id === $admin->id) {
@@ -285,6 +328,7 @@ class AuthController extends Controller
         }
 
         $user->delete();
+
         return response()->json(['ok' => true]);
     }
 
@@ -296,7 +340,7 @@ class AuthController extends Controller
         $tgId = (int) $request->input('id');
 
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active') {
+        if (! $shop || $shop->status !== 'active') {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -309,7 +353,7 @@ class AuthController extends Controller
         $authPayload = $request->all();
         unset($authPayload['shop_id']);
 
-        if (!TelegramService::verifyTelegramLogin($botToken, $authPayload)) {
+        if (! TelegramService::verifyTelegramLogin($botToken, $authPayload)) {
             throw new HttpException(401, 'Telegram authentication failed');
         }
 
@@ -324,7 +368,7 @@ class AuthController extends Controller
             ->where('telegram_id', $tgId)
             ->first();
 
-        if (!$customer) {
+        if (! $customer) {
             $customer = Customer::create([
                 'shop_id' => $shop->id,
                 'name' => $displayName,
@@ -360,7 +404,7 @@ class AuthController extends Controller
         $telegramId = (int) $request->input('telegram_id');
 
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active') {
+        if (! $shop || $shop->status !== 'active') {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -384,7 +428,7 @@ class AuthController extends Controller
         ]);
 
         $ok = TelegramService::sendVerificationCode($botToken, $telegramId, $code);
-        if (!$ok) {
+        if (! $ok) {
             $botUsername = TelegramService::getBotUsername($botToken) ?: 'the bot';
             throw new HttpException(400, "Could not send the code. The customer must open @{$botUsername} in Telegram and press Start first.");
         }
@@ -399,7 +443,7 @@ class AuthController extends Controller
         $code = trim($request->input('code', ''));
 
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active') {
+        if (! $shop || $shop->status !== 'active') {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -407,7 +451,7 @@ class AuthController extends Controller
             ->where('telegram_id', $telegramId)
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             throw new HttpException(400, 'No code was requested. Please request a new code.');
         }
         if ($record->expires_at && $record->expires_at->isPast()) {
@@ -423,7 +467,7 @@ class AuthController extends Controller
             ->where('telegram_id', $telegramId)
             ->first();
 
-        if (!$customer) {
+        if (! $customer) {
             $customer = Customer::create([
                 'shop_id' => $shop->id,
                 'name' => "User {$telegramId}",
@@ -450,9 +494,10 @@ class AuthController extends Controller
     public function telegramMe(Request $request)
     {
         $customer = $request->attributes->get('customer');
-        if (!$customer) {
+        if (! $customer) {
             throw new HttpException(401, 'Customer not found');
         }
+
         return response()->json($customer->to_dict());
     }
 
@@ -462,20 +507,20 @@ class AuthController extends Controller
         $initData = (string) $request->input('init_data', '');
 
         $shop = Shop::find($shopId);
-        if (!$shop || $shop->status !== 'active') {
+        if (! $shop || $shop->status !== 'active') {
             throw new HttpException(404, 'Shop not found');
         }
 
         $tg = $shop->telegram_dict();
         $botToken = trim($tg['bot_token'] ?? '');
-        if (!$botToken) {
+        if (! $botToken) {
             throw new HttpException(400, 'Telegram login is not enabled for this shop yet');
         }
 
         // Parse initData query string: key=value pairs
         parse_str($initData, $params);
         $receivedHash = $params['hash'] ?? '';
-        if (!$receivedHash) {
+        if (! $receivedHash) {
             throw new HttpException(401, 'Invalid Telegram initData');
         }
 
@@ -492,14 +537,14 @@ class AuthController extends Controller
         $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
         $calcHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        if (!hash_equals($calcHash, $receivedHash)) {
+        if (! hash_equals($calcHash, $receivedHash)) {
             throw new HttpException(401, 'Telegram verification failed');
         }
 
         // Parse user json from params
         $userData = isset($params['user']) ? json_decode($params['user'], true) : [];
         $tgId = $userData['id'] ?? null;
-        if (!$tgId) {
+        if (! $tgId) {
             throw new HttpException(400, 'Missing Telegram user data');
         }
 
@@ -513,7 +558,7 @@ class AuthController extends Controller
             ->where('telegram_id', $tgId)
             ->first();
 
-        if (!$customer) {
+        if (! $customer) {
             $customer = Customer::create([
                 'shop_id' => $shop->id,
                 'name' => $displayName,
@@ -547,4 +592,3 @@ class AuthController extends Controller
         ]);
     }
 }
-

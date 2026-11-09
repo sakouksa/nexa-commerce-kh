@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use App\Events\OrderCreated;
 use App\Events\LowStockAlert;
-use App\Listeners\SendTelegramOrderNotification;
+use App\Events\OrderCreated;
 use App\Listeners\SendTelegramLowStockNotification;
+use App\Listeners\SendTelegramOrderNotification;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 

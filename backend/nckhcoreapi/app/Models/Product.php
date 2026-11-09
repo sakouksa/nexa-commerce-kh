@@ -49,29 +49,41 @@ class Product extends Model
 
     public function getImagesArray(): array
     {
-        if (empty($this->images)) return [];
+        if (empty($this->images)) {
+            return [];
+        }
         $decoded = json_decode($this->images, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function getCustomAttributesArray(): array
     {
-        if (empty($this->custom_attributes)) return [];
+        if (empty($this->custom_attributes)) {
+            return [];
+        }
         $decoded = json_decode($this->custom_attributes, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function getVariationsArray(): array
     {
-        if (empty($this->variations)) return [];
+        if (empty($this->variations)) {
+            return [];
+        }
         $decoded = json_decode($this->variations, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 
     public function getMetadataDict(): array
     {
-        if (empty($this->metadata_json)) return [];
+        if (empty($this->metadata_json)) {
+            return [];
+        }
         $decoded = json_decode($this->metadata_json, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 

@@ -3,7 +3,6 @@
 namespace App\Actions\Payments;
 
 use App\Models\Order;
-use App\Models\Shop;
 use App\Services\AbaService;
 use App\Services\PaymentNotConfiguredException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -13,12 +12,12 @@ class CreateAbaCheckoutAction
     public function execute(int $orderId, array $urls = []): array
     {
         $order = Order::find($orderId);
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
         $shop = $order->shop;
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 

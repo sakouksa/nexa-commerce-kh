@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <!-- Background Card Soft Gradient -->
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f6f9fc" />
+      <stop offset="100%" stop-color="#edf3f8" />
+    </linearGradient>
+
+    <!-- Top Face Gradient -->
+    <linearGradient id="cubeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#abbccc" />
+      <stop offset="100%" stop-color="#9cb0c4" />
+    </linearGradient>
+
+    <!-- Left Face Gradient -->
+    <linearGradient id="cubeLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c8eac" />
+      <stop offset="100%" stop-color="#6f819a" />
+    </linearGradient>
+
+    <!-- Right Face Gradient -->
+    <linearGradient id="cubeRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5b6c84" />
+      <stop offset="100%" stop-color="#4e5e74" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow Filter -->
+    <filter id="shadowFilter" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" />
+    </filter>
+  </defs>
+
+  <!-- Rounded Background Container -->
+  <rect width="200" height="200" rx="28" fill="url(#cardBg)" />
+  <rect x="0.75" y="0.75" width="198.5" height="198.5" rx="27.25" fill="none" stroke="#e3ecf5" stroke-width="1.5" />
+
+  <!-- Soft Isometric Floating Floor Shadow -->
+  <ellipse cx="100" cy="154" rx="50" ry="12" fill="#d7e1ed" filter="url(#shadowFilter)" />
+
+  <!-- 3D Isometric Floating Cube -->
+  <g id="cube">
+    <!-- Top Face -->
+    <polygon points="100,60 138,82 100,104 62,82" fill="url(#cubeTop)" />
+
+    <!-- Left Face -->
+    <polygon points="62,82 100,104 100,142 62,120" fill="url(#cubeLeft)" />
+
+    <!-- Right Face -->
+    <polygon points="100,104 138,82 138,120 100,142" fill="url(#cubeRight)" />
+  </g>
+</svg>

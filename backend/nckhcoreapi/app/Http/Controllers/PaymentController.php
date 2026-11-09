@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\CreateAbaCheckoutAction;
+use App\Actions\Payments\VerifyAbaPaymentAction;
 use App\Helpers\ShopHelper;
 use App\Models\Order;
 use App\Models\Shop;
 use App\Services\AbaService;
-use App\Services\PaymentNotConfiguredException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -15,12 +16,12 @@ class PaymentController extends Controller
     public function abaStatus(Request $request)
     {
         $shopId = (int) $request->input('shop_id');
-        if (!$shopId) {
+        if (! $shopId) {
             throw new HttpException(400, 'shop_id is required');
         }
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -30,7 +31,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function abaCreate(Request $request, \App\Actions\Payments\CreateAbaCheckoutAction $action)
+    public function abaCreate(Request $request, CreateAbaCheckoutAction $action)
     {
         $orderId = (int) $request->input('order_id');
         $res = $action->execute($orderId, [
@@ -42,7 +43,7 @@ class PaymentController extends Controller
         return response()->json($res);
     }
 
-    public function abaVerify(Request $request, \App\Actions\Payments\VerifyAbaPaymentAction $action)
+    public function abaVerify(Request $request, VerifyAbaPaymentAction $action)
     {
         $orderId = (int) $request->input('order_id');
         $tx = $request->input('transaction_id');
@@ -57,12 +58,12 @@ class PaymentController extends Controller
         $tx = $payload['tran_id'] ?? $payload['transaction_id'] ?? null;
         $status = strtolower((string) ($payload['status'] ?? $payload['transaction_status'] ?? ''));
 
-        if (!$tx) {
+        if (! $tx) {
             return response()->json(['ok' => false, 'detail' => 'transaction not found']);
         }
 
         $order = Order::where('transaction_id', $tx)->first();
-        if (!$order) {
+        if (! $order) {
             return response()->json(['ok' => false, 'detail' => 'transaction not found']);
         }
 
@@ -116,14 +117,14 @@ class PaymentController extends Controller
     {
         $user = $request->user();
         $shopId = (int) $request->input('shop_id');
-        if (!$shopId) {
+        if (! $shopId) {
             throw new HttpException(400, 'shop_id is required');
         }
 
         ShopHelper::requireShopAccess($shopId, $user);
 
         $shop = Shop::find($shopId);
-        if (!$shop) {
+        if (! $shop) {
             throw new HttpException(404, 'Shop not found');
         }
 
@@ -137,9 +138,9 @@ class PaymentController extends Controller
         $successUrl = 'http://localhost:3000';
         $remark = 'Mini Shop platform test';
         $h = AbaService::abaHash($secretKey, $tranId, $amount, $successUrl, $remark);
-        $checkoutUrl = AbaService::KHQRCC_BASE . "/payment/requestv2/{$profileId}" .
-            "?transaction_id={$tranId}&amount={$amount}&success_url=" . rawurlencode($successUrl) .
-            "&remark=" . rawurlencode($remark) . "&hash={$h}";
+        $checkoutUrl = AbaService::KHQRCC_BASE."/payment/requestv2/{$profileId}".
+            "?transaction_id={$tranId}&amount={$amount}&success_url=".rawurlencode($successUrl).
+            '&remark='.rawurlencode($remark)."&hash={$h}";
 
         return response()->json([
             'ok' => true,

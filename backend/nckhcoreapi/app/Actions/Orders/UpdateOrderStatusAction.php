@@ -13,13 +13,13 @@ class UpdateOrderStatusAction
     public function execute(int $orderId, array $data, User $user): Order
     {
         $order = Order::find($orderId);
-        if (!$order) {
+        if (! $order) {
             throw new HttpException(404, 'Order not found');
         }
 
         ShopHelper::requireShopAccess($order->shop_id, $user);
 
-        if (!empty($data['payment_status']) && $data['payment_status'] === 'paid') {
+        if (! empty($data['payment_status']) && $data['payment_status'] === 'paid') {
             OrderController::markPaid($order);
         }
 

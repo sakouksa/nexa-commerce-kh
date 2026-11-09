@@ -13,11 +13,13 @@ class CategoryResource extends JsonResource
             'id' => $this->id,
             'shop_id' => $this->shop_id,
             'name' => $this->name,
-            'description' => $this->description ?? '',
-            'icon' => $this->icon ?? '',
+            'slug' => $this->slug ?? '',
+            'parent_id' => $this->parent_id,
             'image' => $this->image ?? '',
-            'display_order' => (int) ($this->display_order ?? 0),
-            'product_count' => method_exists($this->resource, 'products') ? $this->products()->count() : 0,
+            'sort_order' => (int) ($this->sort_order ?? 0),
+            'display_order' => (int) ($this->sort_order ?? 0),
+            'product_count' => (int) ($this->products_count ?? ($this->relationLoaded('products') ? $this->products->count() : 0)),
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

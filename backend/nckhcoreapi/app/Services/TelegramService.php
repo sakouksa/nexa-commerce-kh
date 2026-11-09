@@ -40,6 +40,7 @@ class TelegramService
                 'text' => strip_tags($text),
                 'disable_web_page_preview' => true,
             ]);
+
             return $resp->successful() && ($resp->json('ok') === true);
         } catch (Exception $e) {
             return false;
@@ -48,7 +49,9 @@ class TelegramService
 
     public static function getBotUsername(string $botToken): ?string
     {
-        if (empty($botToken)) return null;
+        if (empty($botToken)) {
+            return null;
+        }
         try {
             $resp = Http::timeout(10)->get("https://api.telegram.org/bot{$botToken}/getMe");
             if ($resp->successful()) {
@@ -57,13 +60,16 @@ class TelegramService
         } catch (Exception $e) {
             return null;
         }
+
         return null;
     }
 
     public static function verifyTelegramLogin(string $botToken, array $data): bool
     {
         $hash = $data['hash'] ?? '';
-        if (empty($hash)) return false;
+        if (empty($hash)) {
+            return false;
+        }
 
         $checkData = [];
         foreach ($data as $k => $v) {
@@ -77,7 +83,7 @@ class TelegramService
         $secretKey = hash('sha256', $botToken, true);
         $computedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
-        if (!hash_equals($computedHash, $hash)) {
+        if (! hash_equals($computedHash, $hash)) {
             return false;
         }
 
@@ -95,14 +101,14 @@ class TelegramService
         $changed = false;
 
         if (empty($tg['profile_id'])) {
-            $tg['profile_id'] = 'SHOP' . $shop->id . '-' . strtoupper(Str::random(8));
+            $tg['profile_id'] = 'SHOP'.$shop->id.'-'.strtoupper(Str::random(8));
             $changed = true;
         }
         if (empty($tg['secret_key'])) {
             $tg['secret_key'] = Str::random(16);
             $changed = true;
         }
-        if (!isset($tg['linked_chats']) || !is_array($tg['linked_chats'])) {
+        if (! isset($tg['linked_chats']) || ! is_array($tg['linked_chats'])) {
             $tg['linked_chats'] = [];
             $changed = true;
         }
@@ -119,14 +125,18 @@ class TelegramService
     {
         $tg = $shop->telegram_dict();
         $botToken = trim($tg['bot_token'] ?? '');
-        if (empty($botToken)) return false;
+        if (empty($botToken)) {
+            return false;
+        }
 
         $chatIds = [];
-        if (!empty($tg['chat_id'])) {
+        if (! empty($tg['chat_id'])) {
             $chatIds[] = (string) $tg['chat_id'];
         }
         foreach ($tg['linked_chats'] ?? [] as $c) {
-            if (!empty($c)) $chatIds[] = (string) $c;
+            if (! empty($c)) {
+                $chatIds[] = (string) $c;
+            }
         }
         $chatIds = array_unique($chatIds);
 
@@ -142,9 +152,10 @@ class TelegramService
 
     public static function sendVerificationCode(string $botToken, $chatId, string $code): bool
     {
-        $text = "🔐 <b>លេខកូដផ្ទៀងផ្ទាត់ (Verification Code):</b>\n\n" .
-                "<code>{$code}</code>\n\n" .
-                "លេខកូដនេះមានសុពលភាពរយៈពេល ៥ នាទី។ សូមកុំចែករំលែកលេខកូដនេះទៅកាន់អ្នកដទៃ។";
+        $text = "🔐 <b>លេខកូដផ្ទៀងផ្ទាត់ (Verification Code):</b>\n\n".
+                "<code>{$code}</code>\n\n".
+                'លេខកូដនេះមានសុពលភាពរយៈពេល ៥ នាទី។ សូមកុំចែករំលែកលេខកូដនេះទៅកាន់អ្នកដទៃ។';
+
         return self::sendTelegramMessage($botToken, (string) $chatId, $text);
     }
 
@@ -152,11 +163,12 @@ class TelegramService
     {
         $formattedAmount = number_format($amount, 2);
         $shopName = $shop->shop_name ?: $shop->username;
-        $text = "🛒 <b>New Order Placed!</b>\n\n" .
-                "🏪 <b>Shop:</b> {$shopName}\n" .
-                "🧾 <b>Order:</b> #{$orderNumber}\n" .
-                "💰 <b>Amount:</b> {$formattedAmount} {$currency}\n" .
+        $text = "🛒 <b>New Order Placed!</b>\n\n".
+                "🏪 <b>Shop:</b> {$shopName}\n".
+                "🧾 <b>Order:</b> #{$orderNumber}\n".
+                "💰 <b>Amount:</b> {$formattedAmount} {$currency}\n".
                 "👤 <b>Customer:</b> {$customerName}";
+
         return self::sendShopNotification($shop, $text);
     }
 
@@ -170,28 +182,28 @@ class TelegramService
         $now = date('Y-m-d H:i:s');
 
         $lines = [
-            "✅ <b>Payment Confirmed!</b>",
-            "",
+            '✅ <b>Payment Confirmed!</b>',
+            '',
             "🏪 <b>Shop:</b> {$shopName}",
             "🧾 <b>Order:</b> #{$order->order_number}",
             "💰 <b>Amount:</b> {$formattedAmount} {$order->currency}",
-            "💳 <b>Method:</b> " . strtoupper($order->payment_method),
+            '💳 <b>Method:</b> '.strtoupper($order->payment_method),
             "👤 <b>Customer:</b> {$customerName} ({$customerPhone})",
             "📍 <b>Address:</b> {$customerAddress}",
             "🕒 <b>Time:</b> {$now}",
-            "",
-            "📦 <b>Items Ordered:</b>",
+            '',
+            '📦 <b>Items Ordered:</b>',
         ];
 
         foreach ($order->items as $item) {
             $vars = $item->getVariationsDict();
             $varStr = '';
-            if (!empty($vars)) {
+            if (! empty($vars)) {
                 $varParts = [];
                 foreach ($vars as $k => $v) {
                     $varParts[] = "{$k}: {$v}";
                 }
-                $varStr = " (" . implode(', ', $varParts) . ")";
+                $varStr = ' ('.implode(', ', $varParts).')';
             }
 
             $deductInfo = '';
@@ -202,7 +214,7 @@ class TelegramService
                 }
             }
 
-            $lines[] = "• {$item->product_name}{$varStr} x{$item->quantity} — $" . number_format($item->price, 2) . "{$deductInfo}";
+            $lines[] = "• {$item->product_name}{$varStr} x{$item->quantity} — $".number_format($item->price, 2)."{$deductInfo}";
         }
 
         return self::sendShopNotification($shop, implode("\n", $lines));

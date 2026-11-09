@@ -1,0 +1,16 @@
+{
+  "required": "Required",
+  "optional": "Optional",
+  "selectOption": "Select an option",
+  "username": "Username",
+  "password": "Password",
+  "email": "Email",
+  "phone": "Phone Number",
+  "name": "Name",
+  "shopName": "Shop Name",
+  "role": "Role",
+  "status": "Status",
+  "searchPlaceholder": "Search by keyword...",
+  "filterPlaceholder": "Filter...",
+  "enterValue": "Enter value"
+}

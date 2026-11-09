@@ -35,8 +35,10 @@ class BackupController extends Controller
 
     public function adminExport(Request $request)
     {
-        $fmt = $request->input('export_format', 'xlsx');
-        return $this->serveExport($fmt, null);
+        $shopId = $request->has('shop_id') && $request->input('shop_id') !== '' ? (int) $request->input('shop_id') : null;
+        $fmt = $request->input('export_format') ?: $request->input('format', 'xlsx');
+
+        return $this->serveExport($fmt, $shopId);
     }
 
     public function shopExport(Request $request, int $shopId)
@@ -44,6 +46,7 @@ class BackupController extends Controller
         $user = $request->user();
         ShopHelper::requireShopAccess($shopId, $user);
         $fmt = $request->input('export_format', 'xlsx');
+
         return $this->serveExport($fmt, $shopId);
     }
 
@@ -55,6 +58,7 @@ class BackupController extends Controller
         $res = BackupService::createBackup($shopId, $fmt);
 
         ShopHelper::logActivity('create_backup', "{$user->username} created shop backup {$res['filename']}", $shopId, $user);
+
         return response()->json($res);
     }
 
@@ -64,28 +68,28 @@ class BackupController extends Controller
         ShopHelper::requireShopAccess($shopId, $user);
 
         $file = $request->file('file');
-        if (!$file) {
+        if (! $file) {
             throw new HttpException(400, 'No backup file uploaded');
         }
 
         $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, ['json', 'zip', 'xlsx'])) {
+        if (! in_array($ext, ['json', 'zip', 'xlsx'])) {
             throw new HttpException(400, 'Only .json, .zip or .xlsx files are allowed');
         }
 
         $dir = public_path('backups');
-        if (!File::exists($dir)) {
+        if (! File::exists($dir)) {
             File::makeDirectory($dir, 0755, true);
         }
 
-        $savedFilename = 'import_' . time() . "_{$file->getClientOriginalName()}";
+        $savedFilename = 'import_'.time()."_{$file->getClientOriginalName()}";
         $savedPath = "{$dir}/{$savedFilename}";
         $file->move($dir, $savedFilename);
 
         try {
             [$restored, $skipped, $imagesRestored] = BackupService::importShopBackup($shopId, $savedPath);
         } catch (\Exception $e) {
-            throw new HttpException(400, "Import failed: " . $e->getMessage());
+            throw new HttpException(400, 'Import failed: '.$e->getMessage());
         }
 
         ShopHelper::logActivity('import_backup', "{$user->username} imported shop backup ({$restored} records, {$skipped} duplicates skipped, {$imagesRestored} images)", $shopId, $user);
@@ -102,6 +106,7 @@ class BackupController extends Controller
     {
         $fmt = $request->input('format', 'json');
         $res = BackupService::createBackup(null, $fmt);
+
         return response()->json($res);
     }
 
@@ -120,14 +125,14 @@ class BackupController extends Controller
             $backups = BackupHistory::orderBy('id', 'desc')->get();
         }
 
-        return response()->json($backups->map(fn($b) => $b->to_dict())->toArray());
+        return response()->json($backups->map(fn ($b) => $b->to_dict())->toArray());
     }
 
     public function deleteHistory(Request $request, int $backupId)
     {
         $user = $request->user();
         $backup = BackupHistory::find($backupId);
-        if (!$backup) {
+        if (! $backup) {
             throw new HttpException(404, 'Backup not found');
         }
 
@@ -149,7 +154,7 @@ class BackupController extends Controller
     {
         $user = $request->user();
         $backup = BackupHistory::find($backupId);
-        if (!$backup) {
+        if (! $backup) {
             throw new HttpException(404, 'Backup not found');
         }
 
@@ -159,7 +164,7 @@ class BackupController extends Controller
             throw new HttpException(403, 'Admin privileges required');
         }
 
-        if (!file_exists($backup->filepath)) {
+        if (! file_exists($backup->filepath)) {
             throw new HttpException(404, 'Backup file not found on disk');
         }
 
@@ -174,28 +179,28 @@ class BackupController extends Controller
         }
 
         $file = $request->file('file');
-        if (!$file) {
+        if (! $file) {
             throw new HttpException(400, 'No backup file uploaded');
         }
 
         $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, ['json', 'zip', 'xlsx'])) {
+        if (! in_array($ext, ['json', 'zip', 'xlsx'])) {
             throw new HttpException(400, 'Only .json, .zip or .xlsx files are allowed');
         }
 
         $dir = public_path('backups');
-        if (!File::exists($dir)) {
+        if (! File::exists($dir)) {
             File::makeDirectory($dir, 0755, true);
         }
 
-        $savedFilename = 'import_' . time() . "_{$file->getClientOriginalName()}";
+        $savedFilename = 'import_'.time()."_{$file->getClientOriginalName()}";
         $savedPath = "{$dir}/{$savedFilename}";
         $file->move($dir, $savedFilename);
 
         try {
             [$restored, $skipped, $imagesRestored] = BackupService::importSystemBackup($savedPath);
         } catch (\Exception $e) {
-            throw new HttpException(500, "Import failed: " . $e->getMessage());
+            throw new HttpException(500, 'Import failed: '.$e->getMessage());
         }
 
         ShopHelper::logActivity('system_import', "Admin imported system backup ({$restored} records, {$skipped} duplicates skipped, {$imagesRestored} images)", null, $admin);
@@ -212,12 +217,12 @@ class BackupController extends Controller
     {
         $filename = $request->input('filename', '');
         $safe = basename($filename);
-        if (!$safe) {
+        if (! $safe) {
             throw new HttpException(400, 'filename is required');
         }
 
         $path = public_path("backups/{$safe}");
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             throw new HttpException(404, 'Backup file not found');
         }
 
@@ -235,4 +240,3 @@ class BackupController extends Controller
         ]);
     }
 }
-

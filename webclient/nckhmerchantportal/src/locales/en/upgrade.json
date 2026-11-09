@@ -1,0 +1,116 @@
+{
+  "badge": "Subscription & Billing",
+  "title": "Upgrade Your Store Plan",
+  "subtitle": "Scale your products, unlock multi-channel dining orders, and power your store with real-time KHQR & Telegram alerts.",
+  "syncStatus": "Sync Status",
+  "syncing": "Syncing...",
+  "currentPlan": {
+    "label": "Current Active Plan",
+    "active": "Active",
+    "expired": "Expired",
+    "freeOffer": "Free Offer",
+    "freeTrial": "Free Trial",
+    "planSuffix": "Plan",
+    "validUntil": "Valid until: {{date}}",
+    "noExpiry": "No expiry set · Lifetime / Unlimited access",
+    "productLimit": "Product Limit",
+    "categoryLimit": "Category Limit",
+    "renewalCycle": "Renewal Cycle",
+    "items": "items",
+    "groups": "groups",
+    "monthly": "Monthly",
+    "sixMonths": "6 Months",
+    "annual": "Annual"
+  },
+  "plans": {
+    "sectionTitle": "Select a Plan to Upgrade",
+    "sectionSubtitle": "Choose the subscription that matches your business size. Instant activation via ABA KHQR.",
+    "mostPopular": "Most Popular Choice",
+    "bestValue": "Best Value · Save 17%",
+    "currentBadge": "CURRENT",
+    "perMonth": "/ mo",
+    "perPeriod": "/ {{period}}",
+    "billedEvery": "~${{monthly}}/mo · billed every {{period}}",
+    "standardMonthly": "Standard monthly subscription",
+    "freeTrialBadge": "FREE 1 MONTH TRIAL:",
+    "freeTrialDesc": "$0 for first 30 days",
+    "featuresIncluded": "Features Included:",
+    "activePlanBtn": "Active Current Plan",
+    "claimFreeBtn": "Claim 1 Month FREE",
+    "activatingFree": "Activating Free Trial...",
+    "upgradeToBtn": "Upgrade to {{name}}",
+    "preparingPayment": "Preparing Payment...",
+    "descriptions": {
+      "starter": "Essential tools to launch your store online and start accepting orders.",
+      "growth": "Best for expanding stores with active daily orders and growing inventory.",
+      "premium": "Maximum product limits, kitchen display, and complete annual coverage for high-volume stores."
+    },
+    "features": {
+      "productsLimit": "Up to {{count}} active products",
+      "categoriesLimit": "Up to {{count}} categories",
+      "storefrontCatalog": "Standard Storefront & online catalog",
+      "khqrCashCheckout": "KHQR & Cash payment at checkout",
+      "posReceipts": "Full Cloud POS & thermal receipt printing",
+      "salesOverview": "Daily sales overview & order tracking",
+      "telegramAlerts": "Telegram instant order notifications",
+      "floorPlanTables": "Floor Plan & Table Management",
+      "multichannelOrders": "Multi-channel orders (Dine-in, Takeaway)",
+      "uninterruptedGrowth": "6 Months uninterrupted store validity",
+      "annualValidity": "Full 1 Year store validity (365 days)",
+      "kdsSystem": "Kitchen Display System (KDS)",
+      "telegramSound": "Telegram instant order alerts & sound",
+      "advancedAnalytics": "Advanced sales analytics & CSV export",
+      "allChannels": "Multi-channel orders (Dine-in, Takeaway, Delivery)",
+      "prioritySupport": "Priority merchant assistance & onboarding"
+    },
+    "periods": {
+      "oneMonth": "1 month",
+      "sixMonths": "6 months",
+      "oneYear": "1 year"
+    }
+  },
+  "trust": {
+    "title": "Everything You Need to Power Your Store",
+    "subtitle": "Built natively for Cambodian retail businesses with ABA Pay and Bakong support.",
+    "instantKhqrTitle": "Instant KHQR Activation",
+    "instantKhqrDesc": "Your plan updates instantly upon completing scan payment. No manual approval required.",
+    "telegramTitle": "Telegram Order Alerts",
+    "telegramDesc": "Receive real-time notifications with order details, receipts, and chime sound directly to Telegram.",
+    "posTitle": "Cloud POS & Receipts",
+    "posDesc": "Fast order entry, barcode scanner support, and customizable 58mm / 80mm thermal receipt vouchers.",
+    "zeroFeeTitle": "0% Transaction Fee",
+    "zeroFeeDesc": "Customer payments go straight into your own ABA / Bakong account without middleman cuts."
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "q1": "How do I pay for my subscription?",
+    "a1": "Click \"Pay & Upgrade\" on any plan to open a KHQR payment modal. You can scan the QR code using ABA Mobile or any Bakong-compatible Cambodian banking app.",
+    "q2": "What happens if my subscription expires?",
+    "a2": "Your store, existing products, order history, and customer records remain completely safe. You can renew your subscription at any time to resume adding products and taking new customer orders.",
+    "q3": "Can I upgrade before my current plan finishes?",
+    "a3": "Yes! Upgrading immediately expands your product and category capacity, and your new validity days are added smoothly to your existing account."
+  },
+  "modal": {
+    "badge": "KHQR · ABA Pay",
+    "title": "Scan to Pay & Upgrade",
+    "subtitle": "Upgrading to {{name}} Plan",
+    "amountDue": "Total Amount Due",
+    "planAccess": "{{period}} Plan Access",
+    "qrUnavailable": "QR Code unavailable",
+    "waitingPayment": "Listening for payment confirmation...",
+    "openAbaApp": "Open ABA Mobile App",
+    "alreadyPaidBtn": "I have already paid — Confirm",
+    "checkingStatus": "Checking Payment Status...",
+    "cancelClose": "Cancel & Close"
+  },
+  "toast": {
+    "syncSuccess": "Status updated successfully!",
+    "syncFailed": "Failed to refresh status.",
+    "paymentSuccess": "Payment confirmed! Your plan has been upgraded successfully.",
+    "freeApplied": "Plan {{name}} applied (FREE)! Your shop is extended by 1 month.",
+    "upgradeFailed": "Upgrade failed. Please try again.",
+    "notConfirmedYet": "Payment not confirmed yet (status: {{status}}). Please wait a few seconds.",
+    "verificationFailed": "Verification failed. Please retry."
+  }
+}
+
