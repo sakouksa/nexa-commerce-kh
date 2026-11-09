@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  name: 'MiniStore KH',
+  name: 'Nexa Commerce KH',
   subtitle: 'Merchant Portal',
   version: '1.0.0',
   apiBaseUrl: process.env.REACT_APP_API_URL || 'http://localhost:8003',

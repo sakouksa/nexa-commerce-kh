@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use App\Events\OrderPaid;
 use App\Events\PaymentVerified;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 
 class SendPaymentNotification
 {

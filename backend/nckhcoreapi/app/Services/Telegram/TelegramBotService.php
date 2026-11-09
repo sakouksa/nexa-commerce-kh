@@ -3,7 +3,6 @@
 namespace App\Services\Telegram;
 
 use App\Models\Shop;
-use App\Services\TelegramService;
 
 class TelegramBotService
 {

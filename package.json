@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "Nexa Commerce KH (nexa-commerce-kh) — Multi-Tenant E-Commerce Monorepo Platform",
-  "workspaces": [
-    "webclient/*"
-  ],
   "scripts": {
     "dev:api": "cd backend/nckhcoreapi && php artisan serve --port=8003",
     "dev:bot": "cd backend/nckhtelegrambot && python bot_worker.py",

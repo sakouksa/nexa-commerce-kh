@@ -9,7 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Shop;
-use App\Services\OrderService;
+use App\Services\Orders\OrderService;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 

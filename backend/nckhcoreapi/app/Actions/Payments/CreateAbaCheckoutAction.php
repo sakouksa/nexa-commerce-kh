@@ -3,8 +3,8 @@
 namespace App\Actions\Payments;
 
 use App\Models\Order;
-use App\Services\AbaService;
-use App\Services\PaymentNotConfiguredException;
+use App\Services\Payment\AbaService;
+use App\Services\Payment\PaymentNotConfiguredException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CreateAbaCheckoutAction

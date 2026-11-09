@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use App\Events\LowStockAlert;
 use App\Events\LowStockDetected;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 
 class NotifyLowStock
 {

@@ -10,7 +10,20 @@
   "action": "សកម្មភាព (Action)",
   "description": "ការពិពណ៌នា",
   "ipAddress": "IP Address",
+  "device": "ឧបករណ៍ / Device",
+  "status": "ស្ថានភាព (Status)",
+  "allStatuses": "Status ទាំងអស់",
+  "success": "ជោគជ័យ (Success)",
+  "failed": "បរាជ័យ (Failed)",
+  "details": "ព័ត៌មានលម្អិតសកម្មភាព",
+  "viewDetails": "មើលព័ត៌មានលម្អិត",
   "shop": "Shop",
   "timestamp": "កាលបរិច្ឆេទ / ពេលវេលា",
-  "noLogs": "មិនទាន់មានកំណត់ហេតុសកម្មភាពនៅឡើយទេ"
+  "noLogs": "មិនទាន់មានកំណត់ហេតុសកម្មភាពនៅឡើយទេ",
+  "methodRoute": "Method & Route",
+  "dataChanges": "ការផ្លាស់ប្តូរទិន្នន័យ (Before / After)",
+  "field": "ទិន្នន័យ (Field)",
+  "oldValue": "តម្លៃចាស់ (Before)",
+  "newValue": "តម្លៃថ្មី (After)",
+  "rawProperties": "ទិន្នន័យ Metadata (JSON)"
 }

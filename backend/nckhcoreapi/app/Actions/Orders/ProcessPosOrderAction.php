@@ -4,13 +4,13 @@ namespace App\Actions\Orders;
 
 use App\Events\OrderCreated;
 use App\Helpers\ShopHelper;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
-use App\Services\StockService;
+use App\Services\Inventory\StockService;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 

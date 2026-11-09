@@ -2,9 +2,9 @@
 
 namespace App\Actions\Payments;
 
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Models\Order;
-use App\Services\AbaService;
+use App\Services\Payment\AbaService;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class VerifyAbaPaymentAction

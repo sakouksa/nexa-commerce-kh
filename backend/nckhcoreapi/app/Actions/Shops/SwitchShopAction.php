@@ -4,7 +4,7 @@ namespace App\Actions\Shops;
 
 use App\Models\Shop;
 use App\Models\User;
-use App\Services\JwtService;
+use App\Services\Auth\JwtService;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SwitchShopAction

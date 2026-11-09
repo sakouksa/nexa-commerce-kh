@@ -10,36 +10,20 @@ backend/nckhcoreapi/
 ├── app/
 │   │
 │   ├── Actions/
-│   │   ├── Auth/
-│   │   │   ├── LoginAction.php
-│   │   │   ├── RegisterAction.php
-│   │   │   └── LogoutAction.php
-│   │   │
 │   │   ├── Shops/
-│   │   │   ├── CreateShopAction.php
-│   │   │   ├── UpdateShopAction.php
 │   │   │   └── SwitchShopAction.php
-│   │   │
-│   │   ├── Products/
-│   │   │   ├── CreateProductAction.php
-│   │   │   ├── UpdateProductAction.php
-│   │   │   └── DeleteProductAction.php
 │   │   │
 │   │   ├── Orders/
 │   │   │   ├── CreateOrderAction.php
 │   │   │   ├── ProcessPosOrderAction.php
-│   │   │   ├── CancelOrderAction.php
-│   │   │   └── CompleteOrderAction.php
+│   │   │   └── UpdateOrderStatusAction.php
 │   │   │
 │   │   ├── Payments/
-│   │   │   ├── CreatePaymentAction.php
-│   │   │   ├── VerifyPaymentAction.php
-│   │   │   └── RefundPaymentAction.php
+│   │   │   ├── CreateAbaCheckoutAction.php
+│   │   │   └── VerifyAbaPaymentAction.php
 │   │   │
 │   │   └── Inventory/
-│   │       ├── AdjustStockAction.php
-│   │       ├── ReserveStockAction.php
-│   │       └── ReleaseStockAction.php
+│   │       └── AdjustStockAction.php
 │   │
 │   ├── Enums/
 │   │   ├── UserRole.php
@@ -72,46 +56,61 @@ backend/nckhcoreapi/
 │   │   │
 │   │   ├── Controllers/
 │   │   │   ├── Api/
-│   │   │   │   ├── Auth/
-│   │   │   │   │   ├── AuthController.php
-│   │   │   │   │   └── ProfileController.php
-│   │   │   │   │
-│   │   │   │   ├── Admin/
-│   │   │   │   │   ├── DashboardController.php
-│   │   │   │   │   ├── ShopController.php
-│   │   │   │   │   └── UserController.php
-│   │   │   │   │
-│   │   │   │   ├── Shop/
-│   │   │   │   │   ├── ShopController.php
-│   │   │   │   │   └── ShopSettingsController.php
-│   │   │   │   │
-│   │   │   │   ├── Products/
-│   │   │   │   │   ├── ProductController.php
-│   │   │   │   │   └── CategoryController.php
-│   │   │   │   │
-│   │   │   │   ├── Orders/
-│   │   │   │   │   ├── OrderController.php
-│   │   │   │   │   └── PosOrderController.php
-│   │   │   │   │
-│   │   │   │   ├── Payments/
-│   │   │   │   │   ├── PaymentController.php
-│   │   │   │   │   └── PaymentWebhookController.php
-│   │   │   │   │
-│   │   │   │   ├── Inventory/
-│   │   │   │   │   ├── StockController.php
-│   │   │   │   │   └── StockMovementController.php
-│   │   │   │   │
-│   │   │   │   ├── Customers/
-│   │   │   │   │   └── CustomerController.php
-│   │   │   │   │
-│   │   │   │   ├── Reports/
-│   │   │   │   │   ├── SalesReportController.php
-│   │   │   │   │   ├── ProductReportController.php
-│   │   │   │   │   └── InventoryReportController.php
-│   │   │   │   │
-│   │   │   │   └── Telegram/
-│   │   │   │       ├── TelegramAuthController.php
-│   │   │   │       └── TelegramWebhookController.php
+│   │   │   │   └── V1/
+│   │   │   │       ├── Auth/
+│   │   │   │       │   ├── AuthController.php
+│   │   │   │       │   └── ProfileController.php
+│   │   │   │       │
+│   │   │   │       ├── Admin/
+│   │   │   │       │   ├── DashboardController.php
+│   │   │   │       │   ├── ShopController.php
+│   │   │   │       │   └── UserController.php
+│   │   │   │       │
+│   │   │   │       ├── Backup/
+│   │   │   │       │   └── BackupController.php
+│   │   │   │       │
+│   │   │   │       ├── Shop/
+│   │   │   │       │   ├── ShopController.php
+│   │   │   │       │   └── ShopSettingsController.php
+│   │   │   │       │
+│   │   │   │       ├── Products/
+│   │   │   │       │   ├── ProductController.php
+│   │   │   │       │   └── CategoryController.php
+│   │   │   │       │
+│   │   │   │       ├── Orders/
+│   │   │   │       │   ├── OrderController.php
+│   │   │   │       │   └── PosOrderController.php
+│   │   │   │       │
+│   │   │   │       ├── Payments/
+│   │   │   │       │   ├── PaymentController.php
+│   │   │   │       │   └── PaymentWebhookController.php
+│   │   │   │       │
+│   │   │   │       ├── Plans/
+│   │   │   │       │   └── PlanController.php
+│   │   │   │       │
+│   │   │   │       ├── Inventory/
+│   │   │   │       │   ├── StockController.php
+│   │   │   │       │   └── StockMovementController.php
+│   │   │   │       │
+│   │   │   │       ├── Customers/
+│   │   │   │       │   └── CustomerController.php
+│   │   │   │       │
+│   │   │   │       ├── Reports/
+│   │   │   │       │   ├── ReportController.php
+│   │   │   │       │   ├── SalesReportController.php
+│   │   │   │       │   ├── ProductReportController.php
+│   │   │   │       │   └── InventoryReportController.php
+│   │   │   │       │
+│   │   │   │       ├── Settings/
+│   │   │   │       │   └── SettingController.php
+│   │   │   │       │
+│   │   │   │       ├── Telegram/
+│   │   │   │       │   ├── TelegramController.php
+│   │   │   │       │   ├── TelegramAuthController.php
+│   │   │   │       │   └── TelegramWebhookController.php
+│   │   │   │       │
+│   │   │   │       └── Uploads/
+│   │   │   │           └── UploadController.php
 │   │   │   │
 │   │   │   └── Controller.php
 │   │   │
@@ -198,29 +197,12 @@ backend/nckhcoreapi/
 │   │   └── Auth/
 │   │       └── JwtService.php
 │   │
-│   ├── Policies/
-│   │   ├── ShopPolicy.php
-│   │   ├── ProductPolicy.php
-│   │   ├── OrderPolicy.php
-│   │   └── UserPolicy.php
-│   │
-│   ├── Scopes/
-│   │   └── ShopScope.php
-│   │
-│   ├── Traits/
-│   │   └── ApiResponseTrait.php
-│   │
 │   ├── Providers/
-│   │   ├── AppServiceProvider.php
-│   │   └── RepositoryServiceProvider.php
+│   │   └── AppServiceProvider.php
 │   │
 │   └── Support/
-│       ├── Money/
-│       │   └── Money.php
-│       ├── Pagination/
-│       │   └── PaginationHelper.php
-│       └── Api/
-│           └── ApiResponse.php
+│       └── Money/
+│           └── Money.php
 │
 ├── bootstrap/
 │   ├── app.php

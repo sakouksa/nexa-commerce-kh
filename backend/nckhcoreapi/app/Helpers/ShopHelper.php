@@ -4,7 +4,7 @@ namespace App\Helpers;
 
 use App\Models\ActivityLog;
 use App\Models\User;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ShopHelper
@@ -113,7 +113,7 @@ class ShopHelper
 
         $icon = ($status === 'failed' || $action === 'account_locked') ? '🚨' : '🛡️';
         $time = now()->format('Y-m-d H:i:s');
-        $msg = "{$icon} <b>MiniStore Security Audit</b>\n\n";
+        $msg = "{$icon} <b>Nexa Commerce KH Security Audit</b>\n\n";
         $msg .= "• <b>Action:</b> <code>" . htmlspecialchars($action) . "</code>\n";
         $msg .= "• <b>User:</b> <code>" . htmlspecialchars($username) . "</code>\n";
         $msg .= "• <b>Status:</b> <b>" . strtoupper($status) . "</b>\n";

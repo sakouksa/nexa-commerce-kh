@@ -7,7 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Shop;
 use App\Models\User;
-use App\Services\JwtService;
+use App\Services\Auth\JwtService;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 

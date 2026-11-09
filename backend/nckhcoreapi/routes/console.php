@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\ReportNotificationService;
+use App\Services\Reports\ReportNotificationService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;

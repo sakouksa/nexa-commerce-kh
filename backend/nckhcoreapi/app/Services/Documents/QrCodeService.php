@@ -2,12 +2,10 @@
 
 namespace App\Services\Documents;
 
-use App\Services\QrService as BaseQrService;
-
-class QrCodeService
+class QrCodeService extends QrService
 {
-    public function generateShopQr(string $url, string $logoPath = ''): string
+    public function generateShopQrInstance(string $url, string $logoPath = ''): string
     {
-        return BaseQrService::generateShopQr($url, $logoPath);
+        return self::generateShopQr($url, $logoPath);
     }
 }

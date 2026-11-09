@@ -3,7 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\OrderCreated;
-use App\Services\TelegramService;
+use App\Services\Telegram\TelegramService;
 
 class SendTelegramOrderNotification
 {

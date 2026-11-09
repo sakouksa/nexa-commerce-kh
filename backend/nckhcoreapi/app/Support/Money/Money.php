@@ -38,6 +38,7 @@ class Money
         }
 
         $khrAmount = round($this->amount * $rate, -2); // Round to hundreds for Riel
+
         return new self($khrAmount, 'KHR');
     }
 
@@ -48,16 +49,17 @@ class Money
         }
 
         $usdAmount = round($this->amount / $rate, 2);
+
         return new self($usdAmount, 'USD');
     }
 
     public function format(): string
     {
         if ($this->currency === 'KHR') {
-            return number_format($this->amount, 0, '.', ',') . ' ៛';
+            return number_format($this->amount, 0, '.', ',').' ៛';
         }
 
-        return '$' . number_format($this->amount, 2, '.', ',');
+        return '$'.number_format($this->amount, 2, '.', ',');
     }
 
     public function toArray(): array
@@ -69,3 +71,4 @@ class Money
         ];
     }
 }
+

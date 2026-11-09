@@ -3,8 +3,6 @@
 namespace App\Services\Payment;
 
 use App\Models\Order;
-use App\Models\Shop;
-use Illuminate\Support\Facades\Http;
 
 class KhqrService
 {
@@ -24,6 +22,6 @@ class KhqrService
 
     public function verifyKhqr(string $md5): bool
     {
-        return !empty($md5);
+        return ! empty($md5);
     }
 }

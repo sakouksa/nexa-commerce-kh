@@ -3,7 +3,7 @@
 namespace App\Actions\Orders;
 
 use App\Helpers\ShopHelper;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Models\Order;
 use App\Models\User;
 use Symfony\Component\HttpKernel\Exception\HttpException;

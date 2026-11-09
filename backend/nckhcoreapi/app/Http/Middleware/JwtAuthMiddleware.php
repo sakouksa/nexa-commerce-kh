@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Customer;
 use App\Models\User;
-use App\Services\JwtService;
+use App\Services\Auth\JwtService;
 use Closure;
 use Exception;
 use Illuminate\Auth\AuthenticationException;

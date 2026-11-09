@@ -29,7 +29,6 @@ class ShopSeeder extends Seeder
                 'role' => 'shop_owner',
                 'shop_id' => $shop->id,
                 'status' => 'active',
-                'full_name' => 'Shop Owner',
             ]
         );
     }

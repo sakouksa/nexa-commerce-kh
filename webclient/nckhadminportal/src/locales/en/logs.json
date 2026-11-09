@@ -10,7 +10,20 @@
   "action": "Action",
   "description": "Description",
   "ipAddress": "IP Address",
+  "device": "Device / Browser",
+  "status": "Status",
+  "allStatuses": "All Statuses",
+  "success": "Success",
+  "failed": "Failed / Blocked",
+  "details": "Activity Details",
+  "viewDetails": "View Details",
   "shop": "Shop",
   "timestamp": "Timestamp",
-  "noLogs": "No activity logs recorded yet"
+  "noLogs": "No activity logs recorded yet",
+  "methodRoute": "Method & Route",
+  "dataChanges": "Data Changes (Diff)",
+  "field": "Field",
+  "oldValue": "Before",
+  "newValue": "After",
+  "rawProperties": "Raw Event Metadata"
 }

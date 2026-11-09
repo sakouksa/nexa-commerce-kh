@@ -241,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {defaultLogo ? (
               <img
                 src={defaultLogo}
-                alt="MiniStore KH"
+                alt="Nexa Commerce KH"
                 style={{
                   borderColor:
                     'color-mix(in srgb, var(--sidebar-active-bg, var(--primary-hex, #ec4899)) 45%, transparent)',
@@ -258,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-[14.5px] text-white tracking-tight leading-tight truncate">
-                    MiniStore KH
+                    Nexa Commerce KH
                   </span>
                   <span
                     style={{
